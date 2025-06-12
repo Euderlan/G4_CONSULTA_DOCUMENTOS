@@ -86,11 +86,11 @@ Para dúvidas ou suporte técnico, entre em contato através dos canais oficiais
 
 ## 📝 Reconhecimentos e Direitos Autorais
 
-**@autor**: Euderlan Freire da Silva Abreu
-            Hissa Bárbara Oliveira
-            Yasmin Serejo Lima
-            Anderson Rodrigo Diniz Oliveira
-            Yuram Almeida        
+**@autor**: Euderlan Freire da Silva Abreu,
+            Hissa Bárbara Oliveira,
+            Yasmin Serejo Lima,
+            Anderson Rodrigo Diniz Oliveira,
+            Yuram Almeida Santos       
 **@contato**: [Seus Emails - se quiserem]  
 **@data última versão**: 12 de junho de 2025  
 **@versão**: 1.0  
