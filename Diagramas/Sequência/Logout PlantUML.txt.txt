@@ -1,0 +1,13 @@
+@startuml
+actor Usuário
+participant Sistema
+
+Usuário -> Sistema: acessa menu superior
+Usuário -> Sistema: clica em opção "Sair"
+
+alt Encerramento de Sessão
+    Sistema -> Sistema: encerra sessão atual
+    Sistema -> Sistema: limpa dados de autenticação
+    Sistema -> Usuário: redireciona para tela inicial
+end
+@enduml
