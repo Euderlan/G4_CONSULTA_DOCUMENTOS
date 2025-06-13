@@ -1,0 +1,32 @@
+
+
+@startuml
+title Gerenciamento de Histórico
+start
+:Usuário acessa opção "Histórico";
+:Sistema exibe lista de perguntas anteriores;
+repeat
+  if (Ação no histórico?) then (Ver resposta completa)
+    :Usuário clica na pergunta;
+    :Sistema exibe resposta completa;
+
+    
+  elseif (Excluir pergunta) then
+    :Usuário seleciona pergunta;
+    :Confirma exclusão;
+    :Sistema remove do histórico;
+    
+  elseif (Repetir consulta) then
+    :Usuário seleciona pergunta para repetir;
+    :Sistema processa pergunta novamente;
+    :Exibe nova resposta;
+    :Nova resposta salva no histórico;
+    
+  else (Voltar)
+    :Retorna à área principal;
+    stop
+  endif
+repeat while (Continuar no histórico?) is (sim)
+:Sair do histórico;
+stop
+@enduml

@@ -1,0 +1,41 @@
+
+
+@startuml
+title Diagrama de Atividade - Cadastro e Login
+
+start
+:Usuário acessa página inicial;
+
+if (Possui conta?) then (sim)
+  :Vai para processo de login;
+  :Faz login (e-mail e senha);
+  :Sistema autentica usuário (valida credenciais);
+  
+  if (Autenticação válida?) then (sim)
+    if (Tipo de usuário?) then (Usuário comum)
+      :Redireciona para área principal;
+    else (Administrador)
+      :Redireciona para área administrativa;
+    endif
+  else (não)
+    :Identifica falha de autenticação;
+    :Prepara mensagem de erro;
+    :Exibe erro de login;
+  endif
+  
+else (não)
+  :Clica em "Criar conta";
+  :Preenche dados obrigatórios (nome, e-mail, matrícula, senha);
+  :Envia dados;
+  :Sistema valida dados;
+  
+  if (Dados válidos?) then (sim)
+    :Sistema cria conta;
+    :Conta criada com sucesso;
+  else (não)
+    :Exibe erro de validação;
+  endif
+endif
+
+stop
+@enduml
