@@ -1,0 +1,18 @@
+@startuml
+actor Usuário
+participant Sistema
+
+Usuário -> Sistema: apresenta opções de avaliação
+
+alt Resposta útil
+    Usuário -> Sistema: clica em emoji "joinha"
+    Sistema -> Sistema: registra feedback positivo
+else Quer sinalizar erro?
+    Usuário -> Sistema: clica em emoji "dislike"
+    Sistema -> Sistema: registra feedback negativo
+    
+    Usuário -> Sistema: descreve o erro encontrado
+    Sistema -> Sistema: marca resposta para revisão
+    Sistema -> Sistema: feedback negativo registrado
+end
+@enduml

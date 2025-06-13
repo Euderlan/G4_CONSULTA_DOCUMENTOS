@@ -1,0 +1,50 @@
+@startuml
+actor Usuário
+participant Sistema
+
+Usuário -> Sistema: acessa página inicial
+
+alt Não possui conta
+    Usuário -> Sistema: clica "Criar conta"
+    Usuário -> Sistema: preenche dados obrigatórios (nome, email, senha)
+    Usuário -> Sistema: envia dados
+    Sistema -> Sistema: valida dados
+    
+    alt Dados corretos
+        Sistema -> Sistema: cria conta
+        Sistema -> Usuário: conta criada com sucesso
+        Sistema -> Usuário: redireciona para área principal
+    else Dados incorretos
+        Sistema -> Sistema: erro de validação
+        Sistema -> Usuário: exibe erro de validação
+    end
+    
+else Possui conta
+    Usuário -> Sistema: vai para processo de login
+    
+    alt Login Tradicional
+        Usuário -> Sistema: faz login (email, senha)
+        Sistema -> Sistema: autentica usuário (valida credenciais)
+        
+        alt Credenciais corretas
+            Sistema -> Sistema: verifica tipo de usuário
+            
+            alt Usuário comum
+                Sistema -> Usuário: redireciona para área principal
+            else Administrador
+                Sistema -> Usuário: redireciona para área administrativa
+            end
+            
+        else Credenciais incorretas
+            Sistema -> Sistema: identifica falha de autenticação
+            Sistema -> Sistema: prepara mensagem de erro
+            Sistema -> Usuário: exibe erro de login
+        end
+        
+    else Login Google
+        Usuário -> Sistema: clica "Entrar com Google"
+        Sistema -> Sistema: autentica via Google
+        Sistema -> Usuário: redireciona para área principal
+    end
+end
+@enduml

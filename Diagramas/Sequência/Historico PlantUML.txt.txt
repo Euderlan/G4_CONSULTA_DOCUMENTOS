@@ -1,0 +1,29 @@
+@startuml
+actor Usuário
+participant Sistema
+
+Usuário -> Sistema: acessa opção "Histórico"
+Sistema -> Usuário: exibe lista de perguntas anteriores
+
+alt Ação no histórico
+    alt Ver resposta completa
+        Usuário -> Sistema: clica na pergunta
+        Sistema -> Usuário: exibe resposta completa
+    else Excluir pergunta
+        Usuário -> Sistema: seleciona pergunta
+        Usuário -> Sistema: confirma exclusão
+        Sistema -> Sistema: remove do histórico
+    else Repetir consulta
+        Usuário -> Sistema: seleciona pergunta para repetir
+        Sistema -> Sistema: processa pergunta novamente
+        Sistema -> Usuário: exibe nova resposta
+        Sistema -> Sistema: nova resposta salva no histórico
+    end
+    
+    alt Continuar no histórico?
+        Usuário -> Sistema: continua no histórico
+    else
+        Usuário -> Sistema: sair do histórico
+    end
+end
+@enduml
