@@ -1,0 +1,17 @@
+
+
+@startuml
+title Processo de Fazer Pergunta - Sistema UFMA
+start
+:Usuário acessa campo de pergunta;
+:Digita dúvida sobre resolução;
+:Clica em "Enviar";
+:Sistema consulta base vetorial
+:Sistema processa pergunta;
+:Sistema busca contexto relevante;
+:Envia pergunta e contexto ao LLM;
+:LLM retorna resposta baseada na resolução;
+:Sistema exibe resposta ao usuário;
+:Pergunta e resposta são salvas no histórico;
+stop
+@enduml
