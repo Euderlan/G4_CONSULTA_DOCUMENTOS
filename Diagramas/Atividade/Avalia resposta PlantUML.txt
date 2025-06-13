@@ -1,0 +1,24 @@
+
+
+@startuml
+title Avaliação de Resposta
+start
+:Sistema exibe resposta da pergunta;
+:Sistema apresenta opções de avaliação;
+if (Resposta útil?) then (sim)
+  :Usuário clica em emoji "joinha";
+  :Sistema registra feedback positivo;
+  stop
+else (não)
+  :Usuário clica em emoji "dislike";
+  :Sistema registra feedback negativo;
+  if (Quer sinalizar erro?) then (sim)
+    :Usuário descreve o erro encontrado;
+    :Sistema marca resposta para revisão;
+    stop
+  else (não)
+    :Feedback negativo registrado;
+    stop
+  endif
+endif
+@enduml

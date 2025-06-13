@@ -1,0 +1,35 @@
+
+
+@startuml
+title Gerenciamento de Resoluções - Área Administrativa
+start
+:Administrador na área administrativa;
+repeat
+  if (Ação administrativa?) then (Adicionar resolução)
+    :Seleciona novo PDF ou documento;
+    :Sistema processa documento;
+    :Gera representações vetoriais;
+    :Atualiza base vetorial;
+    :Resolução adicionada com sucesso;
+    
+  elseif (Editar resolução) then
+    :Seleciona resolução existente;
+    :Edita resolução;
+    :Sistema atualiza base vetorial;
+    :Resolução editada com sucesso;
+    
+  elseif (Remover resolução) then
+    :Seleciona resolução para remoção;
+    :Confirma remoção;
+    :Remove resolução;
+    :Sistema atualiza base vetorial;
+    :Resolução removida com sucesso;
+    
+  else (Logout)
+    :Processo de logout;
+    stop
+  endif
+repeat while (Continuar gerenciando?) is (sim)
+:Sair do gerenciamento;
+stop
+@enduml
