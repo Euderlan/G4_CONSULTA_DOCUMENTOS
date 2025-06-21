@@ -16,6 +16,9 @@ const UFMAConsultaSystem = () => {
   const [documentVersion] = useState('RESOLUÇÃO Nº 1892-CONSEPE - v1.0 (28/06/2019)');
   const [suggestions, setSuggestions] = useState([]);
 
+  // Configuração da URL da API do Render.com
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://ufma-rag-api.onrender.com';
+
   // Email do administrador responsável
   const ADMIN_EMAIL = 'admin.consepe@ufma.br';
 
@@ -110,23 +113,44 @@ const UFMAConsultaSystem = () => {
     }
   }, []);
 
-  // Resposta LLM via API RAG
+  // Comunicação com a API RAG para obter respostas do LLM
   const simulateLLMResponse = useCallback(async (question) => {
     try {
-      const response = await fetch('http://localhost:8000/chat', {
+      // Faz requisição POST para o endpoint de chat da API
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Adiciona headers para evitar problemas de CORS
+          'Origin': 'https://consulta-delta-nine.vercel.app'
+        },
         body: JSON.stringify({ question: question }),
       });
       
+      // Verifica se a resposta HTTP foi bem-sucedida
+      if (!response.ok) {
+        // Tenta obter detalhes do erro da resposta
+        let errorMessage = `Erro HTTP: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Se não conseguir parsear o JSON do erro, usa a mensagem padrão
+        }
+        throw new Error(errorMessage);
+      }
+      
       const data = await response.json();
       
+      // Verifica se há erro na resposta da API
       if (data.error) {
         throw new Error(data.error);
       }
       
+      // Retorna a resposta formatada
       return {
-        answer: data.answer,
+        answer: data.answer || "Desculpe, não consegui gerar uma resposta.",
         source: data.sources && data.sources.length > 0 
           ? data.sources.map(s => s['nome do arquivo']).join(', ')
           : "Documentos da UFMA"
@@ -134,12 +158,27 @@ const UFMAConsultaSystem = () => {
     } catch (error) {
       console.error('Erro ao conectar com a API:', error);
       
+      // Mensagens de erro mais específicas dependendo do tipo
+      let errorMessage = "Erro de Conexão\n\n";
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage += "Não foi possível conectar com o servidor. Verifique sua conexão com a internet.";
+      } else if (error.message.includes('CORS')) {
+        errorMessage += "Erro de CORS. A API pode estar bloqueando requisições do frontend.";
+      } else if (error.message.includes('404')) {
+        errorMessage += "Endpoint não encontrado. Verifique se a API está funcionando corretamente.";
+      } else if (error.message.includes('500')) {
+        errorMessage += "Erro interno do servidor. Tente novamente em alguns instantes.";
+      } else {
+        errorMessage += `Detalhes: ${error.message}`;
+      }
+      
       return {
-        answer: "❌ **Erro de Conexão**\n\nNão foi possível conectar com o sistema de documentos. Verifique se a API está rodando.",
+        answer: errorMessage,
         source: "Sistema - Erro de Conexão"
       };
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleSendMessage = useCallback(() => {
     if (!currentMessage.trim() || isLoading) return;
@@ -157,30 +196,43 @@ const UFMAConsultaSystem = () => {
     setSuggestions([]);
     setIsLoading(true);
 
-    const delay = Math.random() * 2000 + 1000;
-    
-    setTimeout(async () => {
-      const response = await simulateLLMResponse(messageToSend);
-      const botMessage = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: response.answer,
-        source: response.source,
-        timestamp: new Date(),
-        feedback: null
-      };
+    // Chama a API diretamente sem delay artificial
+    simulateLLMResponse(messageToSend)
+      .then(response => {
+        const botMessage = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: response.answer,
+          source: response.source,
+          timestamp: new Date(),
+          feedback: null
+        };
 
-      setChatMessages(prev => [...prev, botMessage]);
-      
-      setUserHistory(prev => [...prev, {
-        question: messageToSend,
-        answer: response.answer,
-        source: response.source,
-        timestamp: new Date()
-      }]);
-      
-      setIsLoading(false);
-    }, delay);
+        setChatMessages(prev => [...prev, botMessage]);
+        
+        // Adiciona ao histórico do usuário
+        setUserHistory(prev => [...prev, {
+          question: messageToSend,
+          answer: response.answer,
+          source: response.source,
+          timestamp: new Date()
+        }]);
+      })
+      .catch(error => {
+        console.error('Erro ao processar mensagem:', error);
+        const errorMessage = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: "Ocorreu um erro inesperado. Tente novamente.",
+          source: "Sistema - Erro",
+          timestamp: new Date(),
+          feedback: null
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [currentMessage, isLoading, simulateLLMResponse]);
 
   const handleKeyDown = useCallback((e) => {
