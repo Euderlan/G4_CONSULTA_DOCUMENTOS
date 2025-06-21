@@ -1,33 +1,21 @@
-# requirements.txt - Versões compatíveis para deploy
+# requirements.txt 
 
-# Flask e CORS
-Flask==3.0.0
+# Flask básico
+Flask==2.3.3
 flask-cors==4.0.0
-Werkzeug==3.0.1
+Werkzeug==2.3.7
 
-# LangChain (versões compatíveis)
-langchain==0.1.20
-langchain-community==0.0.38
-langchain-chroma==0.1.2
+# Groq para LLM
+groq==0.2.0
 
-# Groq
-groq==0.4.1
-
-# Embeddings
-gpt4all==2.5.0
-
-# Chroma DB
-chromadb==0.4.18
-
-# Processamento de arquivos
+# Processamento de PDF
 PyPDF2==3.0.1
-python-docx==1.1.0
 
-# Variáveis de ambiente
+# Ambiente
 python-dotenv==1.0.0
 
-# Para deploy
+# Deploy
 gunicorn==21.2.0
 
-# Utilidades
+# Básicos
 requests==2.31.0
