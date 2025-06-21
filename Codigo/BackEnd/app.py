@@ -7,7 +7,7 @@ from groq import Groq
 from dotenv import load_dotenv
 import logging
 
-# Configurar logging
+# Configuração do sistema de logging para monitoramento da aplicação
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -15,21 +15,27 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configurar CORS
+# Configuração de CORS para permitir requisições dos domínios autorizados
+# Incluindo tanto a URL de produção quanto ambientes de desenvolvimento
 CORS(app, origins=[
-    "https://consulta-delta-nine.vercel.app",
-    "http://localhost:3000",
-    "http://localhost:3001"
+    "https://consulta-documento.vercel.app",  # URL de produção principal
+    "https://consulta-delta-nine.vercel.app",  # URL alternativa para compatibilidade
+    "http://localhost:3000",  # Ambiente de desenvolvimento React
+    "http://localhost:3001"   # Ambiente de desenvolvimento alternativo
 ])
 
-# Cliente Groq
+# Inicialização do cliente Groq para processamento de linguagem natural
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Storage simples em memória para documentos
+# Armazenamento em memória para documentos processados
+# Em produção, considera-se migrar para banco de dados persistente
 document_store = []
 
 def simple_text_splitter(text, chunk_size=1000, overlap=200):
-    """Divisor de texto simples"""
+    """
+    Implementação de divisor de texto para otimizar processamento de documentos grandes
+    Divide texto em chunks com sobreposição para manter contexto entre segmentos
+    """
     chunks = []
     start = 0
     
@@ -47,7 +53,10 @@ def simple_text_splitter(text, chunk_size=1000, overlap=200):
     return chunks
 
 def simple_search(query, documents, max_results=3):
-    """Busca simples por palavras-chave"""
+    """
+    Sistema de busca por relevância baseado em contagem de palavras-chave
+    Implementa scoring simples mas eficaz para recuperação de informações
+    """
     query_words = query.lower().split()
     results = []
     
@@ -65,12 +74,13 @@ def simple_search(query, documents, max_results=3):
                 'score': score
             })
     
-    # Ordenar por score e retornar os melhores
+    # Ordenação por relevância para retornar os resultados mais pertinentes
     results.sort(key=lambda x: x['score'], reverse=True)
     return results[:max_results]
 
 @app.route('/', methods=['GET'])
 def home():
+    """Endpoint de status para verificação de saúde da API"""
     return jsonify({
         'status': 'OK',
         'message': 'UFMA RAG API Simplificada funcionando!',
@@ -80,6 +90,10 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    """
+    Endpoint principal para processamento de perguntas dos usuários
+    Implementa pipeline completo: busca de contexto → geração de resposta → formatação
+    """
     try:
         data = request.json
         question = data.get('question')
@@ -89,7 +103,7 @@ def chat():
         
         logger.info(f"Pergunta recebida: {question}")
         
-        # Se não há documentos carregados
+        # Verificação de disponibilidade de documentos no sistema
         if not document_store:
             return jsonify({
                 'answer': 'Ainda não há documentos carregados no sistema. Por favor, faça upload de documentos da UFMA para começar a fazer perguntas.',
@@ -97,7 +111,7 @@ def chat():
                 'context': ''
             })
         
-        # Buscar documentos relevantes
+        # Execução da busca por documentos relevantes à pergunta
         search_results = simple_search(question, document_store)
         
         if not search_results:
@@ -107,7 +121,7 @@ def chat():
                 'context': ''
             })
         
-        # Preparar contexto
+        # Preparação do contexto agregado para o modelo de linguagem
         context_parts = []
         sources = []
         
@@ -121,7 +135,7 @@ def chat():
         
         context = "\n\n".join(context_parts)
         
-        # Criar prompt para Groq
+        # Construção do prompt especializado para documentos da UFMA
         prompt = f"""Você é um assistente especializado em documentos da UFMA (Universidade Federal do Maranhão).
 
 Pergunta: {question}
@@ -131,7 +145,7 @@ Contexto dos documentos da UFMA:
 
 Responda de forma clara e precisa baseando-se apenas nas informações fornecidas dos documentos da UFMA:"""
         
-        # Enviar para Groq
+        # Processamento da resposta através do modelo Groq LLM
         try:
             response = client.chat.completions.create(
                 model="llama3-8b-8192",
@@ -158,7 +172,10 @@ Responda de forma clara e precisa baseando-se apenas nas informações fornecida
 
 @app.route('/upload', methods=['POST'])
 def upload_document():
-    """Upload de documentos PDF"""
+    """
+    Sistema de upload e processamento de documentos PDF
+    Implementa validação, extração de texto e segmentação automática
+    """
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'Nenhum arquivo enviado'}), 400
@@ -171,17 +188,17 @@ def upload_document():
         if not file.filename.lower().endswith('.pdf'):
             return jsonify({'error': 'Apenas arquivos PDF são aceitos'}), 400
         
-        # Processar PDF
+        # Pipeline de processamento de documentos PDF
         try:
             from PyPDF2 import PdfReader
             import io
             
-            # Ler PDF
+            # Leitura e parsing do arquivo PDF
             pdf_bytes = file.read()
             pdf_file = io.BytesIO(pdf_bytes)
             pdf_reader = PdfReader(pdf_file)
             
-            # Extrair texto de todas as páginas
+            # Extração de texto de todas as páginas do documento
             full_text = ""
             for page in pdf_reader.pages:
                 full_text += page.extract_text() + "\n"
@@ -192,10 +209,10 @@ def upload_document():
         except Exception as e:
             return jsonify({'error': f'Erro ao processar PDF: {str(e)}'}), 400
         
-        # Dividir em chunks
+        # Segmentação do texto em chunks para otimizar busca e processamento
         chunks = simple_text_splitter(full_text)
         
-        # Adicionar ao store
+        # Armazenamento dos chunks processados no sistema
         for chunk in chunks:
             document_store.append({
                 'content': chunk,
@@ -217,9 +234,9 @@ def upload_document():
 
 @app.route('/documents', methods=['GET'])
 def list_documents():
-    """Lista documentos carregados"""
+    """Endpoint para listagem e monitoramento de documentos carregados no sistema"""
     try:
-        # Contar documentos únicos
+        # Agregação de estatísticas dos documentos únicos
         filenames = set()
         for doc in document_store:
             filenames.add(doc['filename'])
@@ -244,6 +261,7 @@ def list_documents():
 
 @app.route('/health', methods=['GET'])
 def health():
+    """Endpoint de monitoramento para verificação de status da aplicação"""
     return jsonify({
         'status': 'OK',
         'message': 'API funcionando',
@@ -252,5 +270,6 @@ def health():
     })
 
 if __name__ == '__main__':
+    # Configuração para deploy em ambiente de produção
     port = int(os.environ.get('PORT', 8000))
     app.run(debug=False, port=port, host='0.0.0.0')
