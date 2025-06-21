@@ -113,42 +113,41 @@ const UFMAConsultaSystem = () => {
     }
   }, []);
 
-  // Comunicação com a API RAG para obter respostas do LLM
+  // Função responsável por se comunicar com a API RAG e obter respostas do modelo LLM
   const simulateLLMResponse = useCallback(async (question) => {
     try {
-      // Faz requisição POST para o endpoint de chat da API
+      // Realiza requisição POST para o endpoint de chat da API backend
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          // Adiciona headers para evitar problemas de CORS
-          'Origin': 'https://consulta-delta-nine.vercel.app'
+          'Accept': 'application/json'
+          // Origin é definido automaticamente pelo navegador para evitar conflitos de CORS
         },
         body: JSON.stringify({ question: question }),
       });
       
-      // Verifica se a resposta HTTP foi bem-sucedida
+      // Validação do status HTTP da resposta
       if (!response.ok) {
-        // Tenta obter detalhes do erro da resposta
+        // Tentativa de extrair detalhes específicos do erro da resposta
         let errorMessage = `Erro HTTP: ${response.status}`;
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
         } catch {
-          // Se não conseguir parsear o JSON do erro, usa a mensagem padrão
+          // Fallback para mensagem padrão se não conseguir parsear o JSON de erro
         }
         throw new Error(errorMessage);
       }
       
       const data = await response.json();
       
-      // Verifica se há erro na resposta da API
+      // Verificação adicional de erros na estrutura da resposta da API
       if (data.error) {
         throw new Error(data.error);
       }
       
-      // Retorna a resposta formatada
+      // Formatação e retorno dos dados da resposta
       return {
         answer: data.answer || "Desculpe, não consegui gerar uma resposta.",
         source: data.sources && data.sources.length > 0 
@@ -158,7 +157,7 @@ const UFMAConsultaSystem = () => {
     } catch (error) {
       console.error('Erro ao conectar com a API:', error);
       
-      // Mensagens de erro mais específicas dependendo do tipo
+      // Sistema de tratamento de erros com mensagens específicas para diferentes cenários
       let errorMessage = "Erro de Conexão\n\n";
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -180,6 +179,7 @@ const UFMAConsultaSystem = () => {
     }
   }, [API_BASE_URL]);
 
+  // Função para processar e enviar mensagens do usuário para a API
   const handleSendMessage = useCallback(() => {
     if (!currentMessage.trim() || isLoading) return;
 
@@ -196,7 +196,7 @@ const UFMAConsultaSystem = () => {
     setSuggestions([]);
     setIsLoading(true);
 
-    // Chama a API diretamente sem delay artificial
+    // Execução da requisição para API sem delays artificiais para melhor performance
     simulateLLMResponse(messageToSend)
       .then(response => {
         const botMessage = {
@@ -210,7 +210,7 @@ const UFMAConsultaSystem = () => {
 
         setChatMessages(prev => [...prev, botMessage]);
         
-        // Adiciona ao histórico do usuário
+        // Atualização do histórico do usuário com a nova interação
         setUserHistory(prev => [...prev, {
           question: messageToSend,
           answer: response.answer,
