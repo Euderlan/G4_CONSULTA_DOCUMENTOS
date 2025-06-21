@@ -110,24 +110,35 @@ const UFMAConsultaSystem = () => {
     }
   }, []);
 
-  // Resposta LLM
-  const simulateLLMResponse = useCallback((question) => {
-    const responses = [
-      {
-        answer: "📋 **Transferência de Curso na UFMA**\n\nDe acordo com a RESOLUÇÃO Nº 1892-CONSEPE, para transferência entre cursos você deve:\n\n• Ter compatibilidade curricular mínima de 30%\n• Disponibilidade de vagas no curso desejado\n• Estar regularmente matriculado\n• Não ter pendências acadêmicas\n\nO processo ocorre semestralmente conforme cronograma acadêmico.",
-        source: "Art. 8º, incisos I-III da RESOLUÇÃO Nº 1892-CONSEPE"
-      },
-      {
-        answer: "📊 **Sistema de Avaliação dos Cursos**\n\nA avaliação segue critérios rigorosos estabelecidos pela resolução:\n\n• **Avaliação periódica** do projeto pedagógico\n• **Análise de desempenho** acadêmico dos estudantes\n• **Acompanhamento** de indicadores de qualidade\n• **Revisão curricular** quando necessário\n\nTodos os cursos passam por avaliação a cada 3 anos.",
-        source: "Capítulo IV, Art. 22 da RESOLUÇÃO Nº 1892-CONSEPE"
-      },
-      {
-        answer: "⏱️ **Carga Horária dos Cursos de Graduação**\n\nAs cargas horárias são definidas conforme as diretrizes nacionais:\n\n• **Bacharelados**: Mínimo estabelecido pelo CNE\n• **Licenciaturas**: Incluem 400h de prática pedagógica\n• **Tecnólogos**: Conforme catálogo nacional\n• **Estágios**: Carga horária específica por área\n\nCada curso tem sua matriz curricular aprovada pelo CONSEPE.",
-        source: "Art. 15, § 2º da RESOLUÇÃO Nº 1892-CONSEPE"
+  // Resposta LLM via API RAG
+  const simulateLLMResponse = useCallback(async (question) => {
+    try {
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
       }
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
+      
+      return {
+        answer: data.answer,
+        source: data.sources && data.sources.length > 0 
+          ? data.sources.map(s => s['nome do arquivo']).join(', ')
+          : "Documentos da UFMA"
+      };
+    } catch (error) {
+      console.error('Erro ao conectar com a API:', error);
+      
+      return {
+        answer: "❌ **Erro de Conexão**\n\nNão foi possível conectar com o sistema de documentos. Verifique se a API está rodando.",
+        source: "Sistema - Erro de Conexão"
+      };
+    }
   }, []);
 
   const handleSendMessage = useCallback(() => {
@@ -148,8 +159,8 @@ const UFMAConsultaSystem = () => {
 
     const delay = Math.random() * 2000 + 1000;
     
-    setTimeout(() => {
-      const response = simulateLLMResponse(messageToSend);
+    setTimeout(async () => {
+      const response = await simulateLLMResponse(messageToSend);
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
