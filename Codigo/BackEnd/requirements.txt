@@ -1,4 +1,4 @@
-# requirements.txt - Dependências do seu projeto RAG
+# requirements.txt - Versões compatíveis para deploy
 
 # Flask e CORS
 Flask==3.0.0
@@ -6,10 +6,9 @@ flask-cors==4.0.0
 Werkzeug==3.0.1
 
 # LangChain (versões compatíveis)
-langchain==0.1.0
-langchain-text-splitters==0.0.1
+langchain==0.1.20
+langchain-community==0.0.38
 langchain-chroma==0.1.2
-langchain-community==0.0.20
 
 # Groq
 groq==0.4.1
