@@ -15,14 +15,18 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configuração de CORS para permitir requisições dos domínios autorizados
-# Incluindo tanto a URL de produção quanto ambientes de desenvolvimento
-CORS(app, origins=[
-    "https://consulta-documento.vercel.app",  # URL de produção principal
-    "https://consulta-delta-nine.vercel.app",  # URL alternativa para compatibilidade
-    "http://localhost:3000",  # Ambiente de desenvolvimento React
-    "http://localhost:3001"   # Ambiente de desenvolvimento alternativo
-])
+# Configuração de CORS definitiva para produção e desenvolvimento
+# Permite requisições apenas dos domínios autorizados com controle completo
+CORS(app, 
+     origins=[
+         "https://consulta-documento.vercel.app",  # URL de produção principal
+         "http://localhost:3000",                  # Ambiente de desenvolvimento React
+         "http://localhost:3001"                   # Ambiente de desenvolvimento alternativo
+     ],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Accept", "Origin", "X-Requested-With"],
+     supports_credentials=True
+)
 
 # Inicialização do cliente Groq para processamento de linguagem natural
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
