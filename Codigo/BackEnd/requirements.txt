@@ -5,8 +5,8 @@ Flask==2.3.3
 flask-cors==4.0.0
 Werkzeug==2.3.7
 
-# Groq para LLM
-groq==0.2.0
+# Groq para LLM (versão atualizada)
+groq>=0.8.0
 
 # Processamento de PDF
 PyPDF2==3.0.1
