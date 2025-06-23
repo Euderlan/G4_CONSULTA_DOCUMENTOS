@@ -1,16 +1,16 @@
 import React from 'react';
-import { 
-  MessageSquare, 
-  History, 
-  Shield, 
-  LogOut, 
-  Zap, 
+import {
+  MessageSquare,
+  History,
+  Shield,
+  LogOut,
+  Zap,
   Send,
   ThumbsUp,
   ThumbsDown,
   AlertTriangle,
   Copy,
-  FileText,
+  FileText, // <-- Importe FileText aqui para o ícone das fontes
   Clock
 } from 'lucide-react';
 import './ChatView.css';
@@ -48,7 +48,7 @@ const ChatView = ({
               <p className="header-subtitle">{documentVersion}</p>
             </div>
           </div>
-          
+
           <div className="header-right">
             <button
               onClick={() => setCurrentView('history')}
@@ -57,17 +57,19 @@ const ChatView = ({
             >
               <History size={20} />
             </button>
-            
+
+            {/* Renderiza o botão Admin apenas se o usuário for admin */}
             {user?.isAdmin && (
               <button
                 onClick={() => setCurrentView('admin')}
-                className="header-button admin-button"
-                title="Painel Admin"
+                className="header-button"
+                title="Administração"
               >
                 <Shield size={20} />
               </button>
             )}
             
+            {/* Resolução de conflito: Mantive a exibição das informações do usuário e o botão de logout */}
             <div className="user-info">
               <img 
                 src={user?.avatar} 
@@ -94,141 +96,86 @@ const ChatView = ({
         </div>
       </header>
 
-      {/* Chat Messages */}
-      <div className="chat-messages">
-        {chatMessages.length === 0 && (
-          <div className="welcome-container">
-            <div className="welcome-icon">
-              <Zap size={32} />
-            </div>
-            <h3 className="welcome-title">Bem-vindo ao Sistema de Consultas</h3>
-            <p className="welcome-text">
-              Faça perguntas sobre a RESOLUÇÃO Nº 1892-CONSEPE das Normas Regulamentadoras dos Cursos de Graduação da UFMA. 
-              Nossa IA está pronta para ajudar com informações precisas e atualizadas.
-            </p>
-            
-            {/* Sugestões rápidas */}
-            <div className="suggestions-container">
-              <h4 className="suggestions-title">💡 Perguntas populares:</h4>
-              <div className="suggestions-grid">
-                {quickSuggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentMessage(suggestion)}
-                    className="suggestion-button"
-                  >
-                    <span className="suggestion-text">{suggestion}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {chatMessages.map((message) => (
-          <div key={message.id} className={`message ${message.type === 'user' ? 'message-user' : 'message-bot'}`}>
-            <div className={`message-content ${message.type === 'user' ? 'message-content-user' : 'message-content-bot'}`}>
-              {message.type === 'user' ? (
-                <div>
-                  <div className="user-message-header">
-                    <img src={user?.avatar} alt="User" className="message-avatar" />
-                    <span className="message-sender">Você</span>
+      {/* Main Chat Area */}
+      <main className="chat-main">
+        <div className="chat-messages">
+          {chatMessages.map((message) => (
+            <div key={message.id} className={`chat-message ${message.sender}`}>
+              <div className="message-content">
+                {message.isError && (
+                  <div className="error-indicator" title="Ocorreu um erro">
+                    <AlertTriangle size={16} />
                   </div>
-                  <div className="message-text">{message.content}</div>
-                </div>
-              ) : (
-                <div>
-                  <div className="bot-message-header">
-                    <div className="bot-avatar">
-                      <Zap size={16} />
-                    </div>
-                    <span className="bot-name">UFMA Assistant</span>
-                    
-                    <div className="message-actions">
+                )}
+                <p>{message.text}</p>
+
+                {/* --- NOVA SEÇÃO PARA EXIBIR FONTES --- */}
+                {message.sender === 'bot' && message.sources && message.sources.length > 0 && (
+                  <div className="message-sources">
+                    <h4>Fontes Consultadas:</h4>
+                    <ul>
+                      {message.sources.map((source, index) => (
+                        <li key={index} className="source-item">
+                          <FileText size={14} className="source-icon" />
+                          <strong>{source.filename}</strong>
+                          {source.content && ( // Opcional: exibe um snippet do conteúdo
+                            <span className="source-content-snippet">
+                              : "{source.content.substring(0, 150)}..."
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* --- FIM DA NOVA SEÇÃO --- */}
+
+                <div className="message-actions">
+                  {message.sender === 'bot' && (
+                    <>
                       <button
-                        onClick={() => copyToClipboard(message.content)}
-                        className="action-button"
-                        title="Copiar resposta"
+                        onClick={() => handleFeedback(message.id, 'positive')}
+                        className="feedback-button"
+                        title="Útil"
+                      >
+                        <ThumbsUp size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(message.id, 'negative')}
+                        className="feedback-button"
+                        title="Não útil"
+                      >
+                        <ThumbsDown size={16} />
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(message.text)}
+                        className="copy-button"
+                        title="Copiar texto"
                       >
                         <Copy size={16} />
                       </button>
-                    </div>
-                  </div>
-                  
-                  <div className="bot-message-body">
-                    <div className="bot-message-text">
-                      {message.content}
-                    </div>
-                  </div>
-                  
-                  <div className="message-footer">
-                    <div className="message-info">
-                      <div className="message-source">
-                        <FileText className="source-icon" />
-                        <span>Fonte: {message.source}</span>
-                      </div>
-                      <div className="message-time">
-                        <Clock className="time-icon" />
-                        {message.timestamp.toLocaleTimeString()}
-                      </div>
-                    </div>
-                    
-                    <div className="feedback-section">
-                      <div className="feedback-buttons">
-                        <span className="feedback-label">Esta resposta foi útil?</span>
-                        <button
-                          onClick={() => handleFeedback(message.id, 'positive')}
-                          className={`feedback-button ${message.feedback === 'positive' ? 'feedback-positive' : 'feedback-neutral'}`}
-                          title="Resposta útil"
-                        >
-                          <ThumbsUp size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleFeedback(message.id, 'negative')}
-                          className={`feedback-button ${message.feedback === 'negative' ? 'feedback-negative' : 'feedback-neutral'}`}
-                          title="Resposta não útil"
-                        >
-                          <ThumbsDown size={16} />
-                        </button>
-                      </div>
-                      
-                      <button
-                        onClick={() => reportError(message.id)}
-                        className={`report-button ${message.reported ? 'report-active' : 'report-inactive'}`}
-                      >
-                        <AlertTriangle size={12} className="report-icon" />
-                        {message.reported ? 'Erro reportado' : 'Reportar erro'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="message message-bot">
-            <div className="loading-message">
-              <div className="loading-message-content">
-                <div className="bot-avatar">
-                  <div className="spinner-white"></div>
-                </div>
-                <div>
-                  <div className="bot-name">UFMA Assistant</div>
-                  <div className="loading-text">Analisando sua consulta...</div>
+                    </>
+                  )}
+                  <span className="message-timestamp">{message.timestamp}</span>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+          {isLoading && (
+            <div className="chat-message bot loading-message">
+              <div className="message-content">
+                <div className="spinner"></div>
+                <p>Digitando...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
 
-      {/* Input Area */}
+      {/* Chat Input Area */}
       <div className="chat-input-area">
-        {/* Sugestões dinâmicas */}
         {suggestions.length > 0 && (
-          <div className="suggestions-popup">
+          <div className="suggestions-container">
             <div className="suggestions-list">
               {suggestions.map((suggestion, index) => (
                 <button
@@ -239,7 +186,10 @@ const ChatView = ({
                   }}
                   className="suggestion-item"
                 >
-                  <span className="suggestion-item-text">{suggestion}</span>
+                  <span className="suggestion-item-text">
+                    <Zap size={14} className="suggestion-icon" />
+                    {suggestion}
+                  </span>
                 </button>
               ))}
             </div>
@@ -258,7 +208,7 @@ const ChatView = ({
               disabled={isLoading}
             />
           </div>
-          
+
           <button
             onClick={handleSendMessage}
             disabled={isLoading || !currentMessage.trim()}
@@ -273,7 +223,7 @@ const ChatView = ({
         </div>
 
         <div className="input-tip">
-          <span>💡 Dica: Use perguntas específicas para obter melhores respostas</span>
+          <span> Dica: Use perguntas específicas para obter melhores respostas</span>
         </div>
       </div>
     </div>
