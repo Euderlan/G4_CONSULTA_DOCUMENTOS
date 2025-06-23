@@ -1,23 +1,60 @@
-# requirements.txt 
+# requirements.txt - Dependências completas para RAG, Autenticação e API
 
+# ========== CORE API ==========
 # FastAPI e servidor ASGI
 fastapi==0.115.13   # Versão recomendada para compatibilidade atual
 uvicorn==0.34.3    # Versão recomendada para o servidor ASGI
 
-# Groq para LLM
-groq>=0.8.0
+# Para deploy em ambiente de produção (servidor WSGI)
+gunicorn==21.2.0
 
-# Processamento de PDF
-PyPDF2==3.0.1
-
-# Variáveis de Ambiente
-python-dotenv==1.0.0
+# Para autenticação, formulários e multipart
+python-multipart==0.0.9 # Necessário para o FastAPI processar form-data
 
 # Para requisições HTTP (geralmente usado implicitamente por libs, mas bom ter)
 requests==2.31.0
 
-# Para deploy em ambiente de produção (servidor WSGI)
-gunicorn==21.2.0
+# Variáveis de Ambiente
+python-dotenv==1.0.0
 
-# Para autenticação, se você usar OAuth2PasswordRequestForm
-python-multipart==0.0.9 # Necessário para o FastAPI processar form-data
+# ========== LLM E IA ==========
+# Groq para LLM
+groq>=0.8.0
+
+# Modelo de embedding leve para RAG
+sentence-transformers==2.7.0
+
+# ========== BANCO DE DADOS VETORIAL ==========
+# Cliente para o Pinecone
+pinecone-client==3.2.1
+# Ou, se for usar Qdrant Cloud:
+# qdrant-client
+# Ou, se for usar Weaviate Cloud:
+# weaviate-client
+
+# ========== PROCESSAMENTO DE DOCUMENTOS ==========
+# Processamento de PDF
+PyPDF2==3.0.1
+
+# ========== AUTENTICAÇÃO E SEGURANÇA ==========
+# Criptografia de senhas
+passlib[bcrypt]==1.7.4
+
+# Tokens JWT
+python-jose[cryptography]==3.3.0
+
+# Validação de email
+email-validator==2.1.0
+
+# Manipulação de datas (opcional)
+python-dateutil==2.8.2
+
+# ========== BANCO DE DADOS (FUTURO) ==========
+# Para persistência de histórico (se não usar um DB externo como PostgreSQL)
+# pip install db-connector-package
+# Por exemplo, para SQLite (já vem com Python, mas para o futuro, se for outro DB)
+# Para PostgreSQL:
+# psycopg2-binary==2.9.7
+# Para SQLAlchemy ORM:
+# sqlalchemy==2.0.23
+# alembic==1.12.1  # Para migrações
