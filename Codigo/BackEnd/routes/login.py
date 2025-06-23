@@ -1,38 +1,376 @@
 # routes/login.py
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from pydantic import BaseModel, EmailStr
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from typing import Optional
+import os
+from dotenv import load_dotenv
+import logging
+
+# Carrega variáveis de ambiente
+load_dotenv()
+
+# Configurações
+SECRET_KEY = os.getenv("SECRET_KEY", "sua_chave_secreta_aqui_mude_em_producao")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Setup do logger
+logger = logging.getLogger(__name__)
+
+# Configuração de criptografia de senhas
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# OAuth2 scheme para autenticação
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 router = APIRouter()
 
-# Você pode definir um modelo para a resposta de login, se quiser
+# ========== MODELOS PYDANTIC ==========
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    is_admin: bool
+    created_at: datetime
+
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
-    # Adicione outros campos como user_email, is_admin, etc., se o backend retornar
+    token_type: str
+    user: UserResponse
 
-@router.post("", response_model=Token)
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+class GoogleLoginRequest(BaseModel):
+    google_token: str
+
+# ========== BANCO DE DADOS EM MEMÓRIA ==========
+# Em produção, substitua por um banco real (PostgreSQL, MySQL, etc.)
+
+users_db = {
+    "admin@ufma.br": {
+        "id": 1,
+        "name": "Administrador UFMA",
+        "email": "admin@ufma.br",
+        "hashed_password": pwd_context.hash("admin123"),
+        "is_admin": True,
+        "created_at": datetime.now()
+    },
+    "usuario@ufma.br": {
+        "id": 2,
+        "name": "Usuário Teste",
+        "email": "usuario@ufma.br",
+        "hashed_password": pwd_context.hash("user123"),
+        "is_admin": False,
+        "created_at": datetime.now()
+    }
+}
+
+# Contador para IDs de novos usuários
+next_user_id = 3
+
+# ========== FUNÇÕES AUXILIARES ==========
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica se a senha está correta"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """Gera hash da senha"""
+    return pwd_context.hash(password)
+
+def get_user_by_email(email: str):
+    """Busca usuário por email"""
+    return users_db.get(email)
+
+def authenticate_user(email: str, password: str):
+    """Autentica usuário"""
+    user = get_user_by_email(email)
+    if not user:
+        return False
+    if not verify_password(password, user["hashed_password"]):
+        return False
+    return user
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Cria token JWT"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """Obtém usuário atual pelo token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Credenciais inválidas",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        token_data = TokenData(email=email)
+    except JWTError:
+        raise credentials_exception
+    
+    user = get_user_by_email(email=token_data.email)
+    if user is None:
+        raise credentials_exception
+    return user
+
+async def get_current_active_user(current_user: dict = Depends(get_current_user)):
+    """Obtém usuário ativo atual"""
+    return current_user
+
+# ========== ENDPOINTS ==========
+
+@router.post("/register", response_model=UserResponse)
+async def register_user(user_data: UserCreate):
+    """
+    Endpoint para registro de novos usuários.
+    Valida dados, verifica se usuário já existe e cria nova conta.
+    """
+    try:
+        # Verifica se o usuário já existe
+        if get_user_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email já está registrado no sistema"
+            )
+        
+        # Valida se a senha tem pelo menos 6 caracteres
+        if len(user_data.password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A senha deve ter pelo menos 6 caracteres"
+            )
+        
+        # Valida se o nome tem pelo menos 2 caracteres
+        if len(user_data.name.strip()) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O nome deve ter pelo menos 2 caracteres"
+            )
+        
+        global next_user_id
+        
+        # Cria novo usuário
+        new_user = {
+            "id": next_user_id,
+            "name": user_data.name.strip(),
+            "email": user_data.email.lower(),
+            "hashed_password": get_password_hash(user_data.password),
+            "is_admin": user_data.email.lower().endswith("@ufma.br") and "admin" in user_data.email.lower(),
+            "created_at": datetime.now()
+        }
+        
+        # Adiciona ao "banco de dados"
+        users_db[user_data.email.lower()] = new_user
+        next_user_id += 1
+        
+        logger.info(f"Novo usuário registrado: {user_data.email}")
+        
+        return UserResponse(
+            id=new_user["id"],
+            name=new_user["name"],
+            email=new_user["email"],
+            is_admin=new_user["is_admin"],
+            created_at=new_user["created_at"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no registro: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno do servidor no registro"
+        )
+
+@router.post("/", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
-    Endpoint de login de usuário.
-    NOTA: Esta é uma implementação simulada. A lógica real de autenticação e geração de tokens
-    (ex: JWT) deve ser adicionada aqui, incluindo validação de credenciais com um banco de dados.
+    Endpoint principal de login com email/senha.
+    Retorna token JWT e informações do usuário.
     """
-    # Lógica de autenticação aqui
-    # Exemplo simples de validação (NÃO USAR EM PRODUÇÃO):
-    if form_data.username == "test@test.com" and form_data.password == "password":
-        return {"access_token": "token_fake_para_test@test.com", "token_type": "bearer"}
-    elif form_data.username == "admin.consepe@ufma.br" and form_data.password == "adminpass":
-        return {"access_token": "token_fake_para_admin@ufma.br", "token_type": "bearer"}
-    else:
-        raise HTTPException(status_code=400, detail="Credenciais inválidas.")
+    try:
+        # Autentica o usuário
+        user = authenticate_user(form_data.username.lower(), form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email ou senha incorretos",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Cria token de acesso
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["email"]}, expires_delta=access_token_expires
+        )
+        
+        logger.info(f"Login realizado: {user['email']}")
+        
+        # Retorna token e dados do usuário
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user["id"],
+                name=user["name"],
+                email=user["email"],
+                is_admin=user["is_admin"],
+                created_at=user["created_at"]
+            )
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no login: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno do servidor no login"
+        )
 
-@router.post("/google")
-async def google_login():
+@router.post("/google", response_model=Token)
+async def google_login(google_data: GoogleLoginRequest):
     """
-    Endpoint para integração com login do Google.
-    NOTA: Esta é uma implementação simulada. A lógica real de OAuth 2.0 com Google
-    (ex: usar Google Sign-In SDK e verificar o token no backend) deve ser adicionada aqui.
+    Endpoint para login com Google.
+    NOTA: Esta é uma implementação simulada. Para produção, integre com a API do Google.
     """
-    # Integração com Google
-    return {"status": "ok", "message": "Login com Google simulado com sucesso."}
+    try:
+        # SIMULAÇÃO - Em produção, valide o token do Google aqui
+        # Exemplo de como seria:
+        # from google.auth.transport import requests
+        # from google.oauth2 import id_token
+        # 
+        # idinfo = id_token.verify_oauth2_token(
+        #     google_data.google_token, requests.Request(), GOOGLE_CLIENT_ID
+        # )
+        # user_email = idinfo['email']
+        # user_name = idinfo['name']
+        
+        # Para demonstração, vamos simular um usuário do Google
+        google_email = "usuario.google@gmail.com"
+        google_name = "Usuário Google"
+        
+        # Verifica se usuário já existe
+        user = get_user_by_email(google_email)
+        
+        if not user:
+            # Cria novo usuário automaticamente para login do Google
+            global next_user_id
+            user = {
+                "id": next_user_id,
+                "name": google_name,
+                "email": google_email,
+                "hashed_password": get_password_hash("google_auth_no_password"),
+                "is_admin": False,
+                "created_at": datetime.now()
+            }
+            users_db[google_email] = user
+            next_user_id += 1
+            logger.info(f"Novo usuário criado via Google: {google_email}")
+        
+        # Cria token de acesso
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["email"]}, expires_delta=access_token_expires
+        )
+        
+        logger.info(f"Login Google realizado: {user['email']}")
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user["id"],
+                name=user["name"],
+                email=user["email"],
+                is_admin=user["is_admin"],
+                created_at=user["created_at"]
+            )
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro no login Google: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro no login com Google"
+        )
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(current_user: dict = Depends(get_current_active_user)):
+    """
+    Endpoint para obter informações do usuário logado.
+    Requer token de autenticação.
+    """
+    return UserResponse(
+        id=current_user["id"],
+        name=current_user["name"],
+        email=current_user["email"],
+        is_admin=current_user["is_admin"],
+        created_at=current_user["created_at"]
+    )
+
+@router.post("/logout")
+async def logout():
+    """
+    Endpoint de logout.
+    NOTA: Com JWT, o logout real seria implementado com blacklist de tokens.
+    """
+    return {"message": "Logout realizado com sucesso"}
+
+@router.get("/users")
+async def list_users(current_user: dict = Depends(get_current_active_user)):
+    """
+    Endpoint para listar usuários (apenas para admins).
+    """
+    if not current_user["is_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado: apenas administradores"
+        )
+    
+    users_list = []
+    for user_data in users_db.values():
+        users_list.append(UserResponse(
+            id=user_data["id"],
+            name=user_data["name"],
+            email=user_data["email"],
+            is_admin=user_data["is_admin"],
+            created_at=user_data["created_at"]
+        ))
+    
+    return {"users": users_list, "total": len(users_list)}
+
+@router.get("/test-auth")
+async def test_auth_endpoint(current_user: dict = Depends(get_current_active_user)):
+    """
+    Endpoint de teste para verificar se a autenticação está funcionando.
+    """
+    return {
+        "message": "Autenticação funcionando!",
+        "user": {
+            "email": current_user["email"],
+            "name": current_user["name"],
+            "is_admin": current_user["is_admin"]
+        }
+    }
