@@ -68,14 +68,30 @@ const ChatView = ({
                 <Shield size={20} />
               </button>
             )}
-
-            <button
-              onClick={handleLogout}
-              className="header-button"
-              title="Sair"
-            >
-              <LogOut size={20} />
-            </button>
+            
+            {/* Resolução de conflito: Mantive a exibição das informações do usuário e o botão de logout */}
+            <div className="user-info">
+              <img 
+                src={user?.avatar} 
+                alt="Avatar" 
+                className="user-avatar"
+              />
+              <div className="user-details">
+                <div className="user-name">
+                  {user?.name || user?.username || user?.email?.split('@')[0] || 'Usuário'}
+                </div>
+                <div className="user-role">
+                  {user?.isAdmin ? 'Administrador' : 'Usuário'}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="header-button"
+                title="Sair"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </header>

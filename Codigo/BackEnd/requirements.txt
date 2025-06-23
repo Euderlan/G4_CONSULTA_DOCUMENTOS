@@ -2,8 +2,8 @@
 
 # ========== CORE API ==========
 # FastAPI e servidor ASGI
-fastapi==0.115.13   # Versão recomendada para compatibilidade atual
-uvicorn==0.34.3    # Versão recomendada para o servidor ASGI
+fastapi==0.115.13
+uvicorn==0.34.3
 
 # Para deploy em ambiente de produção (servidor WSGI)
 gunicorn==21.2.0
@@ -46,15 +46,6 @@ python-jose[cryptography]==3.3.0
 # Validação de email
 email-validator==2.1.0
 
-# Manipulação de datas (opcional)
-python-dateutil==2.8.2
+# Manipulação de datas 
 
-# ========== BANCO DE DADOS (FUTURO) ==========
-# Para persistência de histórico (se não usar um DB externo como PostgreSQL)
-# pip install db-connector-package
-# Por exemplo, para SQLite (já vem com Python, mas para o futuro, se for outro DB)
-# Para PostgreSQL:
-# psycopg2-binary==2.9.7
-# Para SQLAlchemy ORM:
-# sqlalchemy==2.0.23
-# alembic==1.12.1  # Para migrações
+python-dateutil==2.8.2
