@@ -15,13 +15,38 @@ logger = logging.getLogger(__name__)
 # Inicializa a aplicação FastAPI
 app = FastAPI()
 
-# Configuração de CORS definitiva para produção e desenvolvimento
-# Permite requisições apenas dos domínios autorizados com controle completo
-origins = [
-    "https://consulta-documento.vercel.app",  # URL de produção principal
-    "http://localhost:3000",                  # Ambiente de desenvolvimento React
-    "http://localhost:3001"                   # Ambiente de desenvolvimento alternativo
-]
+# Configuração de CORS usando variáveis de ambiente
+# Le as origens permitidas do arquivo .env
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+environment = os.getenv("ENVIRONMENT", "development")
+
+# Origens base do .env
+origins = []
+if allowed_origins_env:
+    origins.extend(allowed_origins_env.split(","))
+
+# Adiciona origens de desenvolvimento se estiver em ambiente de desenvolvimento
+if environment == "development":
+    development_origins = [
+        "http://localhost:3000",                  # Ambiente de desenvolvimento React
+        "http://localhost:3001",                  # Ambiente de desenvolvimento alternativo
+        "http://127.0.0.1:3000",                  # Localhost alternativo
+        "http://127.0.0.1:3001",                  # Localhost alternativo
+        "http://192.168.0.15:3000",               # Seu IP específico atual
+        "http://192.168.0.14:3000",               # IPs da rede local
+        "http://192.168.0.13:3000",
+        "http://192.168.0.12:3000",
+        "http://192.168.0.11:3000",
+        "http://192.168.0.10:3000",
+        "http://192.168.1.15:3000",               # Rede local alternativa
+        "http://10.0.0.15:3000",                  # Rede local alternativa
+    ]
+    origins.extend(development_origins)
+    
+    # Para desenvolvimento, também permite qualquer origem (menos seguro, só para dev)
+    origins.append("*")
+
+logger.info(f"CORS configurado para as origens: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,5 +71,3 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 async def root():
     return {"message": "UFMA RAG API com FastAPI funcionando! Acesse /docs para a documentação interativa."}
 
-# O bloco if __name__ == '__main__': não é necessário aqui,
-# pois o Uvicorn (uvicorn main:app --reload) já cuida da inicialização.

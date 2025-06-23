@@ -47,36 +47,54 @@ pinecone_client = None
 pinecone_index = None
 
 try:
-    # Inicializa o cliente Pinecone utilizando as chaves de API e ambiente das variáveis de ambiente.
-    pinecone_client = Pinecone(
-        api_key=os.getenv("PINECONE_API_KEY"),
-        environment=os.getenv("PINECONE_ENVIRONMENT")
-    )
+    # Inicializa o cliente Pinecone utilizando apenas a API key (versão atual)
+    pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
     logger.info("Cliente Pinecone inicializado.")
 
     index_name = os.getenv("PINECONE_INDEX_NAME")
     
-    # Verifica a existência do índice no Pinecone e o cria se necessário.
-    if index_name not in pinecone_client.list_indexes():
-        logger.info(f"Índice Pinecone '{index_name}' não encontrado. Criando novo índice...")
+    # Conecta-se diretamente ao índice existente
+    try:
+        pinecone_index = pinecone_client.Index(index_name)
         
-        # A especificação do índice (PodSpec ou ServerlessSpec) deve corresponder ao tipo de ambiente Pinecone.
-        # PodSpec é comum para planos de desenvolvimento ou legados; ServerlessSpec para a nova arquitetura.
-        # A dimensão do índice é definida pelo tamanho dos embeddings gerados pelo modelo (384 para 'all-MiniLM-L6-v2').
-        spec_to_use = PodSpec(environment=os.getenv("PINECONE_ENVIRONMENT")) # Exemplo de uso para PodSpec
-        # Ou: spec_to_use = ServerlessSpec(cloud='aws', region='us-east-1') # Exemplo para ServerlessSpec
+        # Testa a conexão
+        stats = pinecone_index.describe_index_stats()
+        logger.info(f"Conectado ao índice Pinecone '{index_name}' com sucesso. Estatísticas: {stats}")
         
-        pinecone_client.create_index(
-            name=index_name,
-            dimension=embedding_model.get_sentence_embedding_dimension(),
-            metric='cosine', # Métrica de similaridade por cosseno é padrão para embeddings
-            spec=spec_to_use
-        )
-        logger.info(f"Índice Pinecone '{index_name}' criado com sucesso.")
-    
-    # Conecta-se à instância do índice Pinecone.
-    pinecone_index = pinecone_client.Index(index_name)
-    logger.info(f"Conectado ao índice Pinecone '{index_name}'.")
+    except Exception as index_error:
+        logger.warning(f"Não foi possível conectar ao índice existente '{index_name}': {index_error}")
+        
+        # Se não conseguir conectar, verifica se o índice existe
+        try:
+            available_indexes = pinecone_client.list_indexes()
+            logger.info(f"Índices disponíveis: {available_indexes}")
+            
+            if index_name not in [idx.name for idx in available_indexes.indexes]:
+                logger.info(f"Índice '{index_name}' não encontrado. Criando novo índice...")
+                
+                # Cria um novo índice com as dimensões corretas
+                pinecone_client.create_index(
+                    name=index_name,
+                    dimension=384,  # Dimensão para all-MiniLM-L6-v2
+                    metric='cosine',
+                    spec=ServerlessSpec(
+                        cloud='aws',
+                        region='us-east-1'
+                    )
+                )
+                logger.info(f"Índice '{index_name}' criado com sucesso.")
+                
+                # Aguarda criação
+                import time
+                time.sleep(10)
+            
+            # Tenta conectar novamente
+            pinecone_index = pinecone_client.Index(index_name)
+            logger.info(f"Conectado ao índice Pinecone '{index_name}' após verificação.")
+            
+        except Exception as create_error:
+            logger.error(f"Erro ao verificar/criar índice: {create_error}")
+            pinecone_index = None
 
 except Exception as e:
     logger.error(f"Erro crítico ao inicializar o Pinecone: {e}. Funcionalidades RAG podem ser afetadas.", exc_info=True)
