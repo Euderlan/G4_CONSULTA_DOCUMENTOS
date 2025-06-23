@@ -75,7 +75,9 @@ const ChatView = ({
                 className="user-avatar"
               />
               <div className="user-details">
-                <div className="user-name">{user?.username}</div>
+                <div className="user-name">
+                  {user?.name || user?.username || user?.email?.split('@')[0] || 'Usuário'}
+                </div>
                 <div className="user-role">
                   {user?.isAdmin ? 'Administrador' : 'Usuário'}
                 </div>
