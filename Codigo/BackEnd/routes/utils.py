@@ -5,6 +5,7 @@
 
 import os
 import logging
+import time # Adicionado para time.sleep
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer # Dependência para geração de embeddings
 from pinecone import Pinecone, Index, PodSpec, ServerlessSpec # Dependência para interação com Pinecone
@@ -48,57 +49,56 @@ pinecone_index = None
 
 try:
     # Inicializa o cliente Pinecone utilizando apenas a API key (versão atual)
-    pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    logger.info("Cliente Pinecone inicializado.")
+    pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY")) [cite: 1]
+    logger.info("Cliente Pinecone inicializado.") [cite: 1]
 
-    index_name = os.getenv("PINECONE_INDEX_NAME")
+    index_name = os.getenv("PINECONE_INDEX_NAME") [cite: 1]
     
     # Conecta-se diretamente ao índice existente
     try:
-        pinecone_index = pinecone_client.Index(index_name)
+        pinecone_index = pinecone_client.Index(index_name) [cite: 1]
         
         # Testa a conexão
-        stats = pinecone_index.describe_index_stats()
-        logger.info(f"Conectado ao índice Pinecone '{index_name}' com sucesso. Estatísticas: {stats}")
+        stats = pinecone_index.describe_index_stats() [cite: 1]
+        logger.info(f"Conectado ao índice Pinecone '{index_name}' com sucesso. Estatísticas: {stats}") [cite: 1]
         
     except Exception as index_error:
-        logger.warning(f"Não foi possível conectar ao índice existente '{index_name}': {index_error}")
+        logger.warning(f"Não foi possível conectar ao índice existente '{index_name}': {index_error}") [cite: 1]
         
         # Se não conseguir conectar, verifica se o índice existe
         try:
-            available_indexes = pinecone_client.list_indexes()
-            logger.info(f"Índices disponíveis: {available_indexes}")
+            available_indexes = pinecone_client.list_indexes() [cite: 1]
+            logger.info(f"Índices disponíveis: {available_indexes}") [cite: 1]
             
-            if index_name not in [idx.name for idx in available_indexes.indexes]:
-                logger.info(f"Índice '{index_name}' não encontrado. Criando novo índice...")
+            if index_name not in [idx.name for idx in available_indexes.indexes]: [cite: 1]
+                logger.info(f"Índice '{index_name}' não encontrado. Criando novo índice...") [cite: 1]
                 
                 # Cria um novo índice com as dimensões corretas
-                pinecone_client.create_index(
-                    name=index_name,
-                    dimension=384,  # Dimensão para all-MiniLM-L6-v2
-                    metric='cosine',
-                    spec=ServerlessSpec(
-                        cloud='aws',
-                        region='us-east-1'
+                pinecone_client.create_index( [cite: 1]
+                    name=index_name, [cite: 1]
+                    dimension=384,  # Dimensão para all-MiniLM-L6-v2 
+                    metric='cosine', [cite: 1]
+                    spec=ServerlessSpec( [cite: 1]
+                        cloud='aws', [cite: 1]
+                        region='us-east-1' [cite: 1]
                     )
                 )
-                logger.info(f"Índice '{index_name}' criado com sucesso.")
+                logger.info(f"Índice '{index_name}' criado com sucesso.") [cite: 1]
                 
                 # Aguarda criação
-                import time
-                time.sleep(10)
+                time.sleep(10) [cite: 1]
             
             # Tenta conectar novamente
-            pinecone_index = pinecone_client.Index(index_name)
-            logger.info(f"Conectado ao índice Pinecone '{index_name}' após verificação.")
+            pinecone_index = pinecone_client.Index(index_name) [cite: 1]
+            logger.info(f"Conectado ao índice Pinecone '{index_name}' após verificação.") [cite: 1]
             
         except Exception as create_error:
-            logger.error(f"Erro ao verificar/criar índice: {create_error}")
-            pinecone_index = None
+            logger.error(f"Erro ao verificar/criar índice: {create_error}") [cite: 1]
+            pinecone_index = None [cite: 1]
 
 except Exception as e:
-    logger.error(f"Erro crítico ao inicializar o Pinecone: {e}. Funcionalidades RAG podem ser afetadas.", exc_info=True)
-    pinecone_index = None # Garante que a variável permaneça None em caso de falha.
+    logger.error(f"Erro crítico ao inicializar o Pinecone: {e}. Funcionalidades RAG podem ser afetadas.", exc_info=True) [cite: 1]
+    pinecone_index = None # Garante que a variável permaneça None em caso de falha. 
 
 def get_pinecone_index() -> Index:
     """
@@ -141,8 +141,8 @@ def create_documents_from_text_manual(text: str, filename: str, chunk_size: int 
         if not chunk_content.strip(): # Ignora chunks vazios ou contendo apenas espaços em branco
             # Ajusta o ponto de partida para o próximo chunk, evitando loops em texto residual vazio
             start = end - overlap if end - overlap >= 0 else 0
-            if start >= text_length: 
-                break 
+            if start >= text_length:
+                break
             continue
 
         # Associa o conteúdo do chunk com metadados relevantes para indexação no Pinecone.
@@ -157,10 +157,10 @@ def create_documents_from_text_manual(text: str, filename: str, chunk_size: int 
             }
         })
         
-        chunk_order += 1 
-        start = end - overlap 
-        if start < 0: start = 0 
-
+        chunk_order += 1
+        start = end - overlap
+        if start < 0: start = 0
+    
     return chunks_data
 
 def simple_text_splitter(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
