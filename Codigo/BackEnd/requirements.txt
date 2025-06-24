@@ -1,6 +1,6 @@
 # requirements.txt 
 # ========== CORE API ==========
-fastapi>=0.104.0 # Alterado para versão compatível com Pydantic 2.x
+fastapi>=0.104.0
 uvicorn==0.34.3
 gunicorn==21.2.0
 python-multipart==0.0.9
@@ -10,22 +10,20 @@ python-dotenv==1.0.0
 groq>=0.8.0
 # ========== BANCO DE DADOS VETORIAL ==========
 pinecone-client==3.2.1
-sentence-transformers==2.7.0 # Adicionado, pois 'SentenceTransformer' é usado em utils.py
+sentence-transformers==2.7.0
 # ========== PROCESSAMENTO DE DOCUMENTOS ==========
 pypdf==4.0.1
-# ========== AUTENTICAÇÃO ==========
-passlib[bcrypt]==1.7.4
+# ========== AUTENTICACAO ==========
+passlib[bcrypt]>=1.7.4
 python-jose[cryptography]==3.3.0
-# ========== VALIDAÇÃO E UTILITÁRIOS ==========
-# Validação de email
-email-validator==2.2.0
-# Manipulação de datas 
-python-dateutil==2.8.2
-# ========== DEPENDÊNCIAS BÁSICAS ==========
-pydantic==2.5.3
-typing-extensions==4.9.0
+bcrypt>=4.0.0
+# ========== VALIDACAO E UTILITARIOS ==========
+email-validator>=2.0.0
+python-dateutil>=2.8.2
+# ========== DEPENDENCIAS BASICAS ==========
+pydantic>=2.0.0,<3.0.0
+typing-extensions>=4.9.0
 # ========== GOOGLE OAUTH ==========
-# Autenticação Google
 google-auth==2.23.4
 google-auth-oauthlib==1.1.0
 google-auth-httplib2==0.1.1
