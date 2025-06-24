@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: g4-consulta-documentos
+    env: python
+    runtime: python-3.11.9
+    buildCommand: pip install --only-binary=all -r requirements.txt
+    startCommand: gunicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
