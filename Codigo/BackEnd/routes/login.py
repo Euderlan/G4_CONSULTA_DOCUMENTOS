@@ -10,13 +10,18 @@ import os
 from dotenv import load_dotenv
 import logging
 
+# Google Auth imports
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+import google.auth.exceptions
+
 # Carrega variáveis de ambiente
 load_dotenv()
 
 # Configurações
-SECRET_KEY = os.getenv("SECRET_KEY", "sua_chave_secreta_aqui_mude_em_producao")
+SECRET_KEY = os.getenv("SECRET_KEY", "sbM613IFEBDOdAoputAckOOEh-rTwZSs932aAoyw2YfU")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 # Setup do logger
 logger = logging.getLogger(__name__)
@@ -53,6 +58,13 @@ class TokenData(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     google_token: str
+    google_id: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    email_verified: Optional[bool] = None
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
 
 # ========== BANCO DE DADOS EM MEMÓRIA ==========
 # Em produção, substitua por um banco real (PostgreSQL, MySQL, etc.)
@@ -252,50 +264,104 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.post("/google", response_model=Token)
 async def google_login(google_data: GoogleLoginRequest):
     """
-    Endpoint para login com Google.
-    NOTA: Esta é uma implementação simulada. Para produção, integre com a API do Google.
+    Endpoint para login com Google OAuth usando Google Identity Services.
+    Valida o token do Google e cria/autentica o usuário.
     """
     try:
-        # SIMULAÇÃO - Em produção, valide o token do Google aqui
-        # Exemplo de como seria:
-        # from google.auth.transport import requests
-        # from google.oauth2 import id_token
-        # 
-        # idinfo = id_token.verify_oauth2_token(
-        #     google_data.google_token, requests.Request(), GOOGLE_CLIENT_ID
-        # )
-        # user_email = idinfo['email']
-        # user_name = idinfo['name']
+        # Configurações do Google
+        GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
         
-        # Para demonstração, vamos simular um usuário do Google
-        google_email = "usuario.google@gmail.com"
-        google_name = "Usuário Google"
+        if not GOOGLE_CLIENT_ID:
+            logger.error("GOOGLE_CLIENT_ID não configurado")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Google OAuth não configurado no servidor"
+            )
         
-        # Verifica se usuário já existe
+        logger.info(f"Tentativa de login Google com token: {google_data.google_token[:50]}...")
+        
+        try:
+            # Verificar e decodificar o token do Google
+            idinfo = id_token.verify_oauth2_token(
+                google_data.google_token, 
+                google_requests.Request(), 
+                GOOGLE_CLIENT_ID
+            )
+            
+            logger.info(f"Token Google verificado com sucesso. Payload: {idinfo}")
+            
+            # Extrair informações do usuário do token
+            google_email = idinfo.get('email')
+            google_name = idinfo.get('name')
+            google_picture = idinfo.get('picture')
+            google_user_id = idinfo.get('sub')
+            email_verified = idinfo.get('email_verified', False)
+            
+            if not google_email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email não fornecido pelo Google"
+                )
+            
+            if not email_verified:
+                logger.warning(f"Email não verificado para {google_email}")
+                # Continuar mesmo assim, mas logar o aviso
+            
+        except google.auth.exceptions.GoogleAuthError as e:
+            logger.error(f"Erro na verificação do token Google: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token do Google inválido"
+            )
+        except ValueError as e:
+            logger.error(f"Erro no token Google (ValueError): {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token do Google malformado"
+            )
+        except Exception as e:
+            logger.error(f"Erro inesperado na verificação do token: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Erro na verificação do token Google"
+            )
+        
+        # Verificar se usuário já existe
         user = get_user_by_email(google_email)
         
         if not user:
-            # Cria novo usuário automaticamente para login do Google
+            # Criar novo usuário automaticamente para login do Google
             global next_user_id
             user = {
                 "id": next_user_id,
-                "name": google_name,
+                "name": google_name or google_email.split('@')[0],
                 "email": google_email,
-                "hashed_password": get_password_hash("google_auth_no_password"),
-                "is_admin": False,
-                "created_at": datetime.now()
+                "hashed_password": get_password_hash(f"google_auth_{google_user_id}"),
+                "is_admin": google_email.lower().endswith("@ufma.br") and "admin" in google_email.lower(),
+                "created_at": datetime.now(),
+                "google_id": google_user_id,
+                "picture": google_picture,
+                "login_method": "google"
             }
             users_db[google_email] = user
             next_user_id += 1
             logger.info(f"Novo usuário criado via Google: {google_email}")
+        else:
+            # Atualizar informações do Google se necessário
+            if not user.get("google_id"):
+                user["google_id"] = google_user_id
+            if not user.get("picture") and google_picture:
+                user["picture"] = google_picture
+            user["login_method"] = "google"
+            logger.info(f"Usuário existente logado via Google: {google_email}")
         
-        # Cria token de acesso
+        # Criar token de acesso
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user["email"]}, expires_delta=access_token_expires
         )
         
-        logger.info(f"Login Google realizado: {user['email']}")
+        logger.info(f"Login Google realizado com sucesso: {user['email']}")
         
         return Token(
             access_token=access_token,
@@ -309,11 +375,13 @@ async def google_login(google_data: GoogleLoginRequest):
             )
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Erro no login Google: {e}")
+        logger.error(f"Erro no login Google: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro no login com Google"
+            detail="Erro interno no login com Google"
         )
 
 @router.get("/me", response_model=UserResponse)

@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
+// FrontEnd/src/App.js
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import LoginView from './components/LoginView/LoginView';
 import ChatView from './components/ChatView/ChatView';
 import HistoryView from './components/HistoryView/HistoryView';
@@ -21,39 +21,67 @@ const UFMAConsultaSystem = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const ADMIN_EMAIL = 'admin@ufma.br';
 
-  const quickSuggestions = [
+  // === SUGESTÕES MEMORIZADAS ===
+  const quickSuggestions = useMemo(() => [
     "Quais são os requisitos para transferência de curso?",
     "Como funciona o sistema de avaliação?",
     "Qual a carga horária mínima para colação de grau?",
     "Quais as regras para aproveitamento de estudos?",
     "Documentos necessários para matrícula."
-  ];
+  ], []);
+
+  // === CARREGAR USUÁRIO DO LOCALSTORAGE ===
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        setCurrentView('chat');
+      } catch (error) {
+        console.error('Erro ao carregar usuário salvo:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
 
   // === AUTENTICAÇÃO E USUÁRIO ===
-  const onLoginSuccess = useCallback((userData) => {
+  const onLoginSuccess = useCallback((userData, token) => {
+    console.log('Login Success - User:', userData, 'Token:', token);
+    
     setUser(userData);
-    setCurrentView('chat'); // Redireciona para o chat após o login
+    setCurrentView('chat');
+    
+    // Salvar no localStorage
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
   }, []);
 
   const handleLogout = useCallback(() => {
     setUser(null);
     setChatMessages([]);
     setCurrentView('login');
-    localStorage.removeItem('token'); // Limpa o token ao deslogar
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     alert('Você foi desconectado.');
   }, []);
 
   // === FEEDBACK E ERROS ===
   const reportError = useCallback((errorDetails) => {
     console.error("Erro reportado:", errorDetails);
-    // Aqui você pode integrar um serviço de log de erros ou notificação
     alert(`Um erro foi reportado: ${errorDetails}`);
   }, []);
 
   // === FUNÇÕES DO CHAT ===
   const handleInputChange = useCallback((event) => {
     setCurrentMessage(event.target.value);
-    // Lógica para sugestões (pode ser aprimorada com uma API de sugestões futuras)
     if (event.target.value === '') {
       setSuggestions([]);
     } else {
@@ -68,14 +96,14 @@ const UFMAConsultaSystem = () => {
     if (!currentMessage.trim() || isLoading) return;
 
     setIsLoading(true);
-    setSuggestions([]); // Limpa as sugestões ao enviar a mensagem
+    setSuggestions([]);
 
     const newUserMessage = {
       id: chatMessages.length + 1,
       text: currentMessage,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString(),
-      sources: [] // Usuário não tem fontes
+      sources: []
     };
 
     setChatMessages((prevMessages) => [...prevMessages, newUserMessage]);
@@ -88,7 +116,7 @@ const UFMAConsultaSystem = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Inclui o token JWT
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ question: questionToSend }),
       });
@@ -103,20 +131,21 @@ const UFMAConsultaSystem = () => {
       }
 
       const data = await response.json();
-      console.log("Resposta da API de chat:", data); // Para depuração
+      console.log("Resposta da API de chat:", data);
 
       const botMessage = {
         id: chatMessages.length + 2,
-        text: data.answer, // A resposta do LLM
+        text: data.answer,
         sender: 'bot',
         timestamp: new Date().toLocaleTimeString(),
-        sources: data.sources.map(source => ({ // Mapeia as fontes recebidas do backend
-          filename: source.filename,
-          content: source.content, // O conteúdo do chunk, se desejar exibir
-          chunk_order: source.chunk_order, // Pode ser útil para ordenação ou depuração
+        sources: data.sources?.map(source => ({
+          filename: source.filename || 'Documento',
+          content: source.conteudo || source.content,
+          score: source.score,
+          chunk_order: source.chunk_order,
           start_char: source.start_char,
           end_char: source.end_char
-        }))
+        })) || []
       };
 
       setChatMessages((prevMessages) => [...prevMessages, botMessage]);
@@ -147,7 +176,6 @@ const UFMAConsultaSystem = () => {
 
   const handleFeedback = useCallback(async (messageId, feedbackType) => {
     alert(`Feedback "${feedbackType}" registrado para a mensagem ${messageId}.`);
-    // Implementar lógica de API para enviar feedback ao backend
   }, []);
 
   const copyToClipboard = useCallback((text) => {
@@ -173,7 +201,7 @@ const UFMAConsultaSystem = () => {
       const response = await fetch(`${API_BASE_URL}/api/admin/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}` // Incluir token JWT
+          'Authorization': `Bearer ${token}`
         },
         body: formData,
       });
@@ -181,7 +209,6 @@ const UFMAConsultaSystem = () => {
       const data = await response.json();
       if (response.ok) {
         alert(`Documento "${file.name}" carregado com sucesso! ${data.message}`);
-        // Atualizar lista de documentos ou stats após upload
       } else {
         throw new Error(data.detail || `Erro ao carregar documento: ${response.statusText}`);
       }
@@ -201,13 +228,13 @@ const UFMAConsultaSystem = () => {
       const response = await fetch(`${API_BASE_URL}/api/admin/documents`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}` // Incluir token JWT
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();
       if (response.ok) {
         console.log("Documentos Carregados:", data.documents);
-        return data.documents; // Retorna os documentos
+        return data.documents;
       } else {
         throw new Error(data.detail || `Erro ao buscar documentos: ${response.statusText}`);
       }
@@ -221,7 +248,6 @@ const UFMAConsultaSystem = () => {
     }
   }, [API_BASE_URL, reportError]);
 
-  // === CARREGAR HISTÓRICO QUANDO NECESSÁRIO ===
   const fetchUserHistory = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
@@ -237,7 +263,7 @@ const UFMAConsultaSystem = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setUserHistory(data.history); // Assumindo que o backend retorna { history: [...] }
+      setUserHistory(data.history);
     } catch (error) {
       console.error('Erro ao buscar histórico:', error);
       reportError(`Erro ao carregar histórico: ${error.message}`);
@@ -247,7 +273,6 @@ const UFMAConsultaSystem = () => {
     }
   }, [user, API_BASE_URL, reportError]);
 
-  // === CARREGAR HISTÓRICO QUANDO NECESSÁRIO ===
   useEffect(() => {
     if (user && currentView === 'history') {
       fetchUserHistory();
@@ -286,10 +311,9 @@ const UFMAConsultaSystem = () => {
     fetchUserHistory
   };
 
-  // === PROPS ESPECÍFICAS PARA LOGIN ===
   const loginProps = {
     API_BASE_URL,
-    onLoginSuccess, // Callback para quando login der certo
+    onLoginSuccess,
     isLoading,
     setIsLoading
   };
@@ -308,7 +332,7 @@ const UFMAConsultaSystem = () => {
       if (user && user.isAdmin) {
         return <AdminView {...sharedProps} />;
       } else {
-        setCurrentView('chat'); // Redireciona para o chat se não for admin
+        setCurrentView('chat');
         return <ChatView {...sharedProps} />;
       }
     default:
