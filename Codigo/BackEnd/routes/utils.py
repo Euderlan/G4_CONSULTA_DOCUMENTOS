@@ -6,8 +6,9 @@
 import os
 import logging
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer # Dependência para geração de embeddings
-from pinecone import Pinecone, Index, PodSpec, ServerlessSpec # Dependência para interação com Pinecone
+from sentence_transformers import SentenceTransformer
+from pinecone import Pinecone, Index, PodSpec, ServerlessSpec
+import time # Adicionado para usar time.sleep
 
 # Configuração do logger para monitoramento e depuração
 logger = logging.getLogger(__name__)
@@ -47,13 +48,16 @@ pinecone_client = None
 pinecone_index = None
 
 try:
-    # Inicializa o cliente Pinecone utilizando apenas a API key (versão atual)
-    pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    # Inicializa o cliente Pinecone utilizando as chaves de API e ambiente das variáveis de ambiente.
+    pinecone_client = Pinecone(
+        api_key=os.getenv("PINECONE_API_KEY"),
+        environment=os.getenv("PINECONE_ENVIRONMENT") # Mantém o environment para compatibilidade de API
+    )
     logger.info("Cliente Pinecone inicializado.")
 
     index_name = os.getenv("PINECONE_INDEX_NAME")
     
-    # Conecta-se diretamente ao índice existente
+    # Conecta-se diretamente ao índice existente ou o cria se não existir
     try:
         pinecone_index = pinecone_client.Index(index_name)
         
@@ -69,25 +73,27 @@ try:
             available_indexes = pinecone_client.list_indexes()
             logger.info(f"Índices disponíveis: {available_indexes}")
             
-            if index_name not in [idx.name for idx in available_indexes.indexes]:
+            # Ajuste aqui para verificar se o nome do índice existe na lista retornada
+            if index_name not in [idx['name'] for idx in available_indexes]: # Pinecone v3 retorna uma lista de dicionários
                 logger.info(f"Índice '{index_name}' não encontrado. Criando novo índice...")
                 
                 # Cria um novo índice com as dimensões corretas
+                # A dimensão do índice é definida pelo tamanho dos embeddings gerados pelo modelo (384 para 'all-MiniLM-L6-v2').
+                # Assumindo Serverless para novos projetos, ajuste se usar PodSpec
                 pinecone_client.create_index(
                     name=index_name,
                     dimension=384,  # Dimensão para all-MiniLM-L6-v2
                     metric='cosine',
                     spec=ServerlessSpec(
-                        cloud='aws',
-                        region='us-east-1'
+                        cloud='aws', # Escolha a cloud apropriada, ex: 'aws', 'gcp', 'azure'
+                        region='us-east-1' # Escolha a região apropriada
                     )
                 )
                 logger.info(f"Índice '{index_name}' criado com sucesso.")
                 
                 # Aguarda criação
-                import time
-                time.sleep(10)
-            
+                time.sleep(10) # Importante aguardar a criação do índice
+
             # Tenta conectar novamente
             pinecone_index = pinecone_client.Index(index_name)
             logger.info(f"Conectado ao índice Pinecone '{index_name}' após verificação.")
@@ -141,8 +147,8 @@ def create_documents_from_text_manual(text: str, filename: str, chunk_size: int 
         if not chunk_content.strip(): # Ignora chunks vazios ou contendo apenas espaços em branco
             # Ajusta o ponto de partida para o próximo chunk, evitando loops em texto residual vazio
             start = end - overlap if end - overlap >= 0 else 0
-            if start >= text_length: 
-                break 
+            if start >= text_length:
+                break
             continue
 
         # Associa o conteúdo do chunk com metadados relevantes para indexação no Pinecone.
@@ -157,9 +163,9 @@ def create_documents_from_text_manual(text: str, filename: str, chunk_size: int 
             }
         })
         
-        chunk_order += 1 
-        start = end - overlap 
-        if start < 0: start = 0 
+        chunk_order += 1
+        start = end - overlap
+        if start < 0: start = 0
 
     return chunks_data
 

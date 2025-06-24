@@ -1,54 +1,29 @@
-# requirements.txt - Dependências completas para RAG, Autenticação e API
-
+# requirements.txt 
 # ========== CORE API ==========
-# FastAPI e servidor ASGI
-fastapi==0.115.13
+fastapi>=0.104.0 # Alterado para versão compatível com Pydantic 2.x
 uvicorn==0.34.3
-
-# Para deploy em ambiente de produção (servidor WSGI)
 gunicorn==21.2.0
-
-# Para autenticação, formulários e multipart
-python-multipart==0.0.9 # Necessário para o FastAPI processar form-data
-
-# Para requisições HTTP (geralmente usado implicitamente por libs, mas bom ter)
+python-multipart==0.0.9
 requests==2.31.0
-
-# Variáveis de Ambiente
 python-dotenv==1.0.0
-
-# ========== LLM E IA ==========
-# Groq para LLM
+# ========== LLM ==========
 groq>=0.8.0
-
-# Modelo de embedding leve para RAG
-sentence-transformers==2.7.0
-
 # ========== BANCO DE DADOS VETORIAL ==========
-# Cliente para o Pinecone
 pinecone-client==3.2.1
-# Ou, se for usar Qdrant Cloud:
-# qdrant-client
-# Ou, se for usar Weaviate Cloud:
-# weaviate-client
-
+sentence-transformers==2.7.0 # Adicionado, pois 'SentenceTransformer' é usado em utils.py
 # ========== PROCESSAMENTO DE DOCUMENTOS ==========
-# Processamento de PDF
-PyPDF2==3.0.1
-
-# ========== AUTENTICAÇÃO E SEGURANÇA ==========
-# Criptografia de senhas
+pypdf==4.0.1
+# ========== AUTENTICAÇÃO ==========
 passlib[bcrypt]==1.7.4
-
-# Tokens JWT
 python-jose[cryptography]==3.3.0
-
+# ========== VALIDAÇÃO E UTILITÁRIOS ==========
 # Validação de email
-email-validator==2.1.0
-
+email-validator==2.2.0
 # Manipulação de datas 
 python-dateutil==2.8.2
-
+# ========== DEPENDÊNCIAS BÁSICAS ==========
+pydantic==2.5.3
+typing-extensions==4.9.0
 # ========== GOOGLE OAUTH ==========
 # Autenticação Google
 google-auth==2.23.4
