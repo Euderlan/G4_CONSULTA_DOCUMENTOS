@@ -24,9 +24,10 @@ document_store = []
 # O modelo de embedding é inicializado uma única vez na carga do módulo para eficiência.
 embedding_model = None # Inicializado como None para controle de estado
 try:
-    # Utiliza o modelo 'all-MiniLM-L6-v2', conhecido por seu bom balanço entre desempenho e tamanho.
-    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-    logger.info("Modelo de embedding 'all-MiniLM-L6-v2' carregado com sucesso.")
+    # Lê o modelo das variáveis de ambiente, com fallback para o modelo padrão
+    model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    embedding_model = SentenceTransformer(model_name)
+    logger.info(f"Modelo de embedding '{model_name}' carregado com sucesso.")
 except Exception as e:
     logger.error(f"Erro ao carregar o modelo de embedding SentenceTransformer: {e}", exc_info=True)
     # Falhas na carga do modelo impactam diretamente a funcionalidade de geração de embeddings.
@@ -78,18 +79,18 @@ try:
                 logger.info(f"Índice '{index_name}' não encontrado. Criando novo índice...")
                 
                 # Cria um novo índice com as dimensões corretas
-                # A dimensão do índice é definida pelo tamanho dos embeddings gerados pelo modelo (384 para 'all-MiniLM-L6-v2').
-                # Assumindo Serverless para novos projetos, ajuste se usar PodSpec
+                # A dimensão do índice é lida das variáveis de ambiente, com fallback para 384
+                embedding_dimensions = int(os.getenv("EMBEDDING_DIMENSIONS", "384"))
                 pinecone_client.create_index(
                     name=index_name,
-                    dimension=384,  # Dimensão para all-MiniLM-L6-v2
+                    dimension=embedding_dimensions,  # Dimensão configurável
                     metric='cosine',
                     spec=ServerlessSpec(
                         cloud='aws', # Escolha a cloud apropriada, ex: 'aws', 'gcp', 'azure'
                         region='us-east-1' # Escolha a região apropriada
                     )
                 )
-                logger.info(f"Índice '{index_name}' criado com sucesso.")
+                logger.info(f"Índice '{index_name}' criado com sucesso com {embedding_dimensions} dimensões.")
                 
                 # Aguarda criação
                 time.sleep(10) # Importante aguardar a criação do índice
