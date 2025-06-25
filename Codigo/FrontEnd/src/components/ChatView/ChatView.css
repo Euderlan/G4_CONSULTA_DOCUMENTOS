@@ -59,6 +59,12 @@
 .header-right {
   display: flex;
   align-items: center;
+  gap: 1rem;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -145,6 +151,74 @@
   scroll-behavior: smooth;
 }
 
+/* ========== WELCOME SUGGESTIONS ========== */
+.welcome-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.welcome-message {
+  margin-bottom: 2rem;
+}
+
+.welcome-message h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.welcome-message p {
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 600px;
+}
+
+.initial-suggestions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.initial-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #374151;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.initial-suggestion-item:hover {
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.initial-suggestion-item .suggestion-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.initial-suggestion-item span {
+  flex: 1;
+  font-weight: 500;
+}
+
 .chat-messages {
   display: flex;
   flex-direction: column;
@@ -202,6 +276,15 @@
   white-space: nowrap;
 }
 
+.message-disclaimer {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+  opacity: 0.9;
+}
+
 .feedback-button,
 .copy-button {
   background: none;
@@ -220,6 +303,27 @@
 .copy-button:hover {
   background-color: #d1e7ff;
   color: #2563eb;
+}
+
+/* Estados ativos dos botões de feedback */
+.feedback-active-positive {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+.feedback-active-positive:hover {
+  background-color: #1d4ed8 !important;
+  color: white !important;
+}
+
+.feedback-active-negative {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+.feedback-active-negative:hover {
+  background-color: #b91c1c !important;
+  color: white !important;
 }
 
 .error-indicator {
@@ -444,16 +548,24 @@
   .header-content {
     flex-direction: column;
     gap: 1rem;
+    align-items: stretch;
+  }
+
+  .header-right {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-buttons {
+    order: 1;
   }
   
   .user-info {
     margin-left: 0;
     padding-left: 0;
     border-left: none;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 1rem;
-    width: 100%;
-    justify-content: space-between;
+    order: 2;
   }
 
   .header-title {
@@ -471,6 +583,24 @@
   .chat-input-area {
     padding: 1rem;
   }
+
+  /* Welcome suggestions responsive */
+  .welcome-suggestions {
+    padding: 1.5rem 1rem;
+  }
+
+  .welcome-message h3 {
+    font-size: 1.25rem;
+  }
+
+  .welcome-message p {
+    font-size: 0.9rem;
+  }
+
+  .initial-suggestion-item {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -480,13 +610,23 @@
 
   .header-right {
     width: 100%;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .header-buttons {
+    justify-content: center;
+    order: 2;
   }
 
   .user-info {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    order: 1;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
   }
 
   .user-avatar {
@@ -512,6 +652,33 @@
 
   .send-button {
     padding: 0.6rem 0.8rem;
+  }
+
+  /* Welcome suggestions mobile */
+  .welcome-suggestions {
+    padding: 1rem 0.75rem;
+  }
+
+  .welcome-message {
+    margin-bottom: 1.5rem;
+  }
+
+  .welcome-message h3 {
+    font-size: 1.125rem;
+  }
+
+  .welcome-message p {
+    font-size: 0.85rem;
+  }
+
+  .initial-suggestion-item {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .initial-suggestion-item .suggestion-icon {
+    width: 14px;
+    height: 14px;
   }
 
   /* Esconder badge admin em telas muito pequenas */
