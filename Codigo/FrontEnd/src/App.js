@@ -48,6 +48,11 @@ const UFMAConsultaSystem = () => {
     }
   }, []);
 
+  // === FUNÇÃO PARA VERIFICAR SE USUÁRIO É ADMIN ===
+  const isUserAdmin = useCallback((userData) => {
+    return userData?.isAdmin === true || userData?.email === ADMIN_EMAIL;
+  }, [ADMIN_EMAIL]);
+
   // === AUTENTICAÇÃO E USUÁRIO ===
   const onLoginSuccess = useCallback((userData, token) => {
     console.log('Login Success - User:', userData, 'Token:', token);
@@ -72,6 +77,24 @@ const UFMAConsultaSystem = () => {
     localStorage.removeItem('user');
     alert('Você foi desconectado.');
   }, []);
+
+  // === FUNÇÃO PERSONALIZADA PARA MUDANÇA DE VIEW ===
+  const handleViewChange = useCallback((newView) => {
+    console.log('Tentando mudar para view:', newView);
+    console.log('Usuário atual:', user);
+    console.log('É admin?', isUserAdmin(user));
+
+    // Verificar se é tentativa de acesso à área admin
+    if (newView === 'admin') {
+      if (!isUserAdmin(user)) {
+        alert('Acesso negado: Apenas administradores podem acessar esta área.');
+        return;
+      }
+    }
+
+    setCurrentView(newView);
+    console.log('View mudou para:', newView);
+  }, [user, isUserAdmin]);
 
   // === FEEDBACK E ERROS ===
   const reportError = useCallback((errorDetails) => {
@@ -284,7 +307,7 @@ const UFMAConsultaSystem = () => {
     user,
     setUser,
     currentView,
-    setCurrentView,
+    setCurrentView: handleViewChange, // Usar a função personalizada
     chatMessages,
     setChatMessages,
     currentMessage,
@@ -308,7 +331,8 @@ const UFMAConsultaSystem = () => {
     ADMIN_EMAIL,
     handleUploadDocument,
     fetchDocuments,
-    fetchUserHistory
+    fetchUserHistory,
+    isUserAdmin
   };
 
   const loginProps = {
@@ -323,16 +347,23 @@ const UFMAConsultaSystem = () => {
     return <LoginView {...loginProps} />;
   }
 
+  // Debug logs
+  console.log('Current View:', currentView);
+  console.log('User:', user);
+  console.log('Is Admin:', isUserAdmin(user));
+
   switch (currentView) {
     case 'chat':
       return <ChatView {...sharedProps} />;
     case 'history':
       return <HistoryView {...sharedProps} />;
     case 'admin':
-      if (user && user.isAdmin) {
+      if (isUserAdmin(user)) {
         return <AdminView {...sharedProps} />;
       } else {
-        setCurrentView('chat');
+        console.log('Acesso negado à área admin, redirecionando para chat');
+        // Se chegou aqui sem ser admin, volta para o chat
+        setTimeout(() => handleViewChange('chat'), 0);
         return <ChatView {...sharedProps} />;
       }
     default:
