@@ -246,9 +246,9 @@ const LoginView = ({
           <div className="logo-container">
             <MessageSquare size={40} />
           </div>
-          <h1 className="system-title">Sistema UFMA</h1>
-          <p className="system-subtitle">Consultas Inteligentes via LLM</p>
-          <p className="document-version">RESOLUÇÃO Nº 1892-CONSEPE</p>
+          <h1 className="system-title">ConsultAI</h1>
+          <p className="system-subtitle">Consultas Inteligentes de Documentos</p>
+          <p className="document-version">Resoluções da UFMA</p>
         </div>
 
         {/* Content */}
@@ -351,14 +351,14 @@ const LoginView = ({
                     </div>
                     <div>
                       <span 
-                        onClick={() => !isLoading && handleQuickLogin('usuario@ufma.br', 'user123')}
+                        onClick={() => !isLoading && handleQuickLogin('usuario@gmai.com', 'user123')}
                         style={{ 
                           cursor: isLoading ? 'not-allowed' : 'pointer',
                           textDecoration: 'underline',
                           opacity: isLoading ? 0.5 : 1
                         }}
                       >
-                        🟢 <strong>Usuário:</strong> usuario@ufma.br / user123
+                        🟢 <strong>Usuário:</strong> usuario@gmail.com / user123
                       </span>
                     </div>
                   </div>
@@ -441,11 +441,7 @@ const LoginView = ({
                   <User className="info-icon" />
                   <strong>Cadastro para usuários do sistema</strong>
                 </p>
-                <div className="admin-credentials">
-                  <div>✅ Emails @ufma.br terão privilégios especiais</div>
-                  <div>✅ Histórico de conversas personalizado</div>
-                  <div>✅ Acesso a funcionalidades avançadas</div>
-                </div>
+
               </div>
             </div>
           )}
