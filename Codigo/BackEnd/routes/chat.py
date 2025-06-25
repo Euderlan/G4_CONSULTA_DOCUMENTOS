@@ -3,7 +3,7 @@
 # Este componente coordena a recuperação de informações de documentos e a geração de respostas
 # utilizando um modelo de linguagem grande (LLM) da Groq.
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Depends
 from pydantic import BaseModel
 from groq import Groq # Cliente para interagir com a API Groq
 from dotenv import load_dotenv
@@ -14,6 +14,9 @@ import logging
 #   - generate_embedding: Para converter texto em vetores numéricos.
 #   - get_pinecone_index: Para acessar a instância do índice Pinecone.
 from routes.utils import generate_embedding, get_pinecone_index
+
+# Importa autenticação e função para salvar histórico
+from routes.login import get_current_active_user
 
 # Carrega as variáveis de ambiente definidas no arquivo .env do projeto.
 load_dotenv()
@@ -33,7 +36,10 @@ class ChatRequest(BaseModel):
     question: str # O único campo esperado na requisição é a pergunta do usuário.
 
 @router.post("")
-async def send_message(request: ChatRequest = Body(...)):
+async def send_message(
+    request: ChatRequest = Body(...),
+    current_user: dict = Depends(get_current_active_user)
+):
     """
     Endpoint principal para o processamento de mensagens de chat.
     Implementa o fluxo de trabalho de Retrieval-Augmented Generation (RAG):
@@ -43,9 +49,11 @@ async def send_message(request: ChatRequest = Body(...)):
         para formar um prompt contextualizado para o LLM.
     4.  O modelo de linguagem da Groq processa este prompt e gera uma resposta coerente e informada.
     5.  A resposta do LLM, juntamente com as fontes consultadas, é retornada ao cliente.
+    6.  A conversa é automaticamente salva no histórico do usuário autenticado.
 
     Args:
         request (ChatRequest): Objeto contendo a pergunta do usuário.
+        current_user (dict): Dados do usuário autenticado.
 
     Returns:
         dict: Um dicionário contendo a resposta gerada (`answer`),
@@ -127,12 +135,22 @@ Responda de forma clara e precisa baseando-se apenas nas informações fornecida
             logger.error(f"Erro ao processar a requisição com o modelo Groq: {e}", exc_info=True)
             answer = f"Ocorreu um erro ao processar a resposta do modelo de linguagem: {str(e)}"
         
-        # Considerar a persistência do histórico de chat aqui.
-        # Uma implementação futura poderia salvar a interação (pergunta, resposta, fontes)
-        # em um banco de dados, utilizando um user_id real de um sistema de autenticação.
-        # Ex: from database import save_chat_interaction
-        # user_id = "ID_DO_USUARIO_AUTENTICADO" 
-        # save_chat_interaction(user_id, question, answer, sources)
+        # Etapa 5: Salvar no histórico do usuário
+        try:
+            # Importa a função para salvar histórico (evita importação circular)
+            from routes.history import add_chat_entry
+            
+            user_email = current_user["email"]
+            add_chat_entry(
+                user_email=user_email,
+                question=question,
+                answer=answer,
+                sources=sources
+            )
+            logger.info(f"Conversa salva no histórico para usuário {user_email}")
+        except Exception as history_error:
+            # Não falha a resposta se houver erro ao salvar histórico
+            logger.warning(f"Erro ao salvar no histórico: {history_error}")
 
         return {
             'answer': answer,

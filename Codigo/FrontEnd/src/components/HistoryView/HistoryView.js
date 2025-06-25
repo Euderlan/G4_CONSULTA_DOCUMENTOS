@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { History, LogOut, Clock, MessageSquare, Zap, FileText, Copy } from 'lucide-react';
 import './HistoryView.css';
-
+ 
 const HistoryView = ({
   setCurrentView,
   userHistory,
@@ -9,7 +9,7 @@ const HistoryView = ({
   copyToClipboard
 }) => {
   const [expandedItems, setExpandedItems] = useState(new Set());
-
+ 
   const toggleExpanded = (index) => {
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(index)) {
@@ -19,7 +19,7 @@ const HistoryView = ({
     }
     setExpandedItems(newExpanded);
   };
-
+ 
   return (
     <div className="history-container">
       <header className="history-header">
@@ -45,9 +45,9 @@ const HistoryView = ({
           </button>
         </div>
       </header>
-
+ 
       <div className="history-content">
-        {userHistory.length === 0 ? (
+        {!userHistory || userHistory.length === 0 ? (
           <div className="empty-history">
             <Clock className="empty-history-icon" />
             <h3 className="empty-history-title">Nenhuma consulta realizada</h3>
@@ -59,7 +59,7 @@ const HistoryView = ({
           <div className="history-list">
             {userHistory.map((item, index) => (
               <div key={index} className="history-item">
-                <div 
+                <div
                   className="history-item-header"
                   onClick={() => toggleExpanded(index)}
                 >
@@ -69,11 +69,8 @@ const HistoryView = ({
                         <MessageSquare size={16} />
                       </div>
                       <h3 className="history-item-label">Pergunta:</h3>
-                      <div className="history-item-time">
-                        {item.timestamp.toLocaleString()}
-                      </div>
                     </div>
-                    <p className="history-item-question">{item.question}</p>
+                    <p className="history-item-question">{item.question || 'Pergunta não disponível'}</p>
                   </div>
                   <div className="expand-icon">
                     {expandedItems.has(index) ? '−' : '+'}
@@ -90,16 +87,16 @@ const HistoryView = ({
                         <h3 className="history-answer-label">Resposta:</h3>
                       </div>
                       <div className="history-answer-text">
-                        {item.answer}
+                        {item.answer || 'Resposta não disponível'}
                       </div>
                       
                       <div className="history-answer-footer">
                         <div className="history-source">
                           <FileText className="source-icon" />
-                          <span>{item.source}</span>
+                          <span>{item.source || 'Fonte não disponível'}</span>
                         </div>
                         <button
-                          onClick={() => copyToClipboard(item.answer)}
+                          onClick={() => copyToClipboard(item.answer || '')}
                           className="copy-button"
                         >
                           <Copy className="copy-icon" />
@@ -117,5 +114,5 @@ const HistoryView = ({
     </div>
   );
 };
-
+ 
 export default HistoryView;
