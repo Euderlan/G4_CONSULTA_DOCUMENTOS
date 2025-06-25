@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   MessageSquare,
   History,
@@ -19,6 +19,7 @@ const ChatView = ({
   user,
   setCurrentView,
   chatMessages,
+  setChatMessages,
   currentMessage,
   isLoading,
   suggestions,
@@ -34,6 +35,20 @@ const ChatView = ({
   setCurrentMessage,
   setSuggestions
 }) => {
+  // Estado para rastrear feedback dado para cada mensagem
+  const [messageFeedback, setMessageFeedback] = useState({});
+
+  // Função modificada para lidar com feedback
+  const handleFeedbackWithState = (messageId, feedbackType) => {
+    // Atualizar estado local para mostrar feedback visual
+    setMessageFeedback(prev => ({
+      ...prev,
+      [messageId]: feedbackType
+    }));
+    
+    // Chamar função original de feedback
+    handleFeedback(messageId, feedbackType);
+  };
   return (
     <div className="chat-container">
       {/* Header */}
@@ -45,7 +60,7 @@ const ChatView = ({
             </div>
             <div className="header-text">
               <h1 className="header-title">Sistema de Consultas UFMA</h1>
-              <p className="header-subtitle">{documentVersion}</p>
+              <p className="header-subtitle">Consultas Inteligentes via LLM</p>
             </div>
           </div>
 
@@ -72,12 +87,12 @@ const ChatView = ({
             {/* Informações do usuário com avatar */}
             <div className="user-info">
               <img 
-                src={user?.picture || user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'User')}&background=2563eb&color=fff&size=40`}
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&backgroundColor=2563eb&radius=50`}
                 alt="Avatar do usuário" 
                 className="user-avatar"
                 onError={(e) => {
-                  // Fallback caso a imagem não carregue
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'User')}&background=2563eb&color=fff&size=40`;
+                  // Fallback para outro serviço de avatar
+                  e.target.src = `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&backgroundColor=2563eb`;
                 }}
               />
               <div className="user-details">
@@ -103,6 +118,31 @@ const ChatView = ({
       {/* Main Chat Area */}
       <main className="chat-main">
         <div className="chat-messages">
+          {/* Mostrar sugestões iniciais quando não há mensagens */}
+          {chatMessages.length === 0 && !isLoading && (
+            <div className="welcome-suggestions">
+              <div className="welcome-message">
+                <h3>👋 Bem-vindo ao Sistema de Consultas UFMA!</h3>
+                <p>Faça perguntas sobre regulamentos e documentos da universidade. Aqui estão algumas sugestões para começar:</p>
+              </div>
+              <div className="initial-suggestions">
+                {quickSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentMessage(suggestion);
+                      setSuggestions([]);
+                    }}
+                    className="initial-suggestion-item"
+                  >
+                    <Zap size={16} className="suggestion-icon" />
+                    <span>{suggestion}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {chatMessages.map((message) => (
             <div key={message.id} className={`chat-message ${message.sender}`}>
               <div className="message-content">
@@ -137,15 +177,15 @@ const ChatView = ({
                   {message.sender === 'bot' && (
                     <>
                       <button
-                        onClick={() => handleFeedback(message.id, 'positive')}
-                        className="feedback-button"
+                        onClick={() => handleFeedbackWithState(message.id, 'positive')}
+                        className={`feedback-button ${messageFeedback[message.id] === 'positive' ? 'feedback-active-positive' : ''}`}
                         title="Útil"
                       >
                         <ThumbsUp size={16} />
                       </button>
                       <button
-                        onClick={() => handleFeedback(message.id, 'negative')}
-                        className="feedback-button"
+                        onClick={() => handleFeedbackWithState(message.id, 'negative')}
+                        className={`feedback-button ${messageFeedback[message.id] === 'negative' ? 'feedback-active-negative' : ''}`}
                         title="Não útil"
                       >
                         <ThumbsDown size={16} />
@@ -161,6 +201,13 @@ const ChatView = ({
                   )}
                   <span className="message-timestamp">{message.timestamp}</span>
                 </div>
+
+                {/* Disclaimer separado abaixo das ações */}
+                {message.sender === 'bot' && (
+                  <div className="message-disclaimer">
+                    <span>O ConsultAI pode cometer erros. Confira sempre as respostas.</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -206,7 +253,7 @@ const ChatView = ({
               value={currentMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Digite sua pergunta sobre a RESOLUÇÃO Nº 1892-CONSEPE..."
+              placeholder="Digite sua pergunta sobre os documentos da UFMA..."
               className="chat-input"
               disabled={isLoading}
             />
