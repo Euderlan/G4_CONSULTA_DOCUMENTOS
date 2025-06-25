@@ -1,0 +1,37 @@
+@startuml
+actor Administrador
+participant Sistema
+
+Administrador -> Sistema: na área administrativa
+
+alt Ação administrativa?
+    group Adicionar resolução
+        Administrador -> Sistema: seleciona novo PDF ou documento
+        Sistema -> Sistema: processa documento
+        Sistema -> Sistema: gera representações vetoriais
+        Sistema -> Sistema: atualiza base vetorial
+        Sistema -> Administrador: resolução adicionada com sucesso
+    end
+    
+    group Editar resolução
+        Administrador -> Sistema: seleciona resolução existente
+        Administrador -> Sistema: edita resolução
+        Sistema -> Sistema: atualiza base vetorial
+        Sistema -> Administrador: resolução editada com sucesso
+    end
+    
+    group Remover resolução
+        Administrador -> Sistema: seleciona resolução para remoção
+        Administrador -> Sistema: confirma remoção
+        Sistema -> Sistema: remove resolução
+        Sistema -> Sistema: atualiza base vetorial
+        Sistema -> Administrador: resolução removida com sucesso
+    end
+    
+    alt Continuar gerenciando?
+        Administrador -> Sistema: continua no gerenciamento
+    else 
+        Administrador -> Sistema: sair do gerenciamento
+    end
+end
+@enduml

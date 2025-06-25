@@ -1,0 +1,242 @@
+/* ========== LOGIN STYLES ========== */
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #f3e8ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.background-animation {
+  position: absolute;
+  inset: 0;
+}
+
+.floating-element {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.element-1 {
+  top: 2.5rem;
+  left: 2.5rem;
+  width: 5rem;
+  height: 5rem;
+  background-color: #bfdbfe;
+  opacity: 0.2;
+  animation: pulse 3s infinite;
+}
+
+.element-2 {
+  top: 8rem;
+  right: 5rem;
+  width: 4rem;
+  height: 4rem;
+  background-color: #c7d2fe;
+  opacity: 0.3;
+  animation: bounce 2s infinite;
+}
+
+.element-3 {
+  bottom: 5rem;
+  left: 8rem;
+  width: 6rem;
+  height: 6rem;
+  background-color: #c4b5fd;
+  opacity: 0.25;
+  animation: pulse 3s infinite;
+}
+
+.element-4 {
+  bottom: 8rem;
+  right: 2.5rem;
+  width: 3rem;
+  height: 3rem;
+  background-color: #f9a8d4;
+  opacity: 0.2;
+  animation: bounce 2s infinite;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 2rem;
+  width: 100%;
+  max-width: 28rem;
+  position: relative;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-container {
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  color: white;
+  border-radius: 50%;
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.system-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.system-subtitle {
+  color: #4b5563;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.document-version {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.active-tab-blue {
+  background-color: #2563eb;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.active-tab-green {
+  background-color: #059669;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.inactive-tab {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.inactive-tab:hover {
+  background-color: #e5e7eb;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.button-group .primary-button,
+.button-group .register-button,
+.button-group .google-button {
+  width: 100%;
+  padding: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+.register-button{
+  width: 250px;
+  height: 40px;
+}
+
+.info-box {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid;
+}
+
+.info-box-blue {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.info-box-green {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.info-text {
+  font-size: 0.75rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #1d4ed8;
+}
+
+.info-box-green .info-text {
+  color: #047857;
+}
+
+.admin-credentials {
+  font-size: 0.75rem;
+  color: #2563eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.terms-text {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.terms-text p {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* ========== RESPONSIVE LOGIN ========== */
+@media (max-width: 768px) {
+  .login-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+}

@@ -1,0 +1,42 @@
+
+@startuml
+!theme plain
+skinparam state {
+     BorderColor DarkBlue
+    FontSize 12
+}
+
+[*] --> MenuAdmin : Admin logado
+
+state MenuAdmin {
+    MenuAdmin : Menu administrativo
+    MenuAdmin : Escolher ação
+}
+
+state ProcessandoArquivo {
+    ProcessandoArquivo : Processando PDF
+    ProcessandoArquivo : Gerando vetores
+}
+
+state AtualizandoBase {
+    AtualizandoBase : Atualizando base vetorial
+}
+
+state Concluido {
+    Concluido : Operação realizada
+}
+
+state Erro {
+    Erro : Falha na operação
+}
+
+MenuAdmin --> ProcessandoArquivo : Adicionar/Editar resolução
+MenuAdmin --> AtualizandoBase : Remover resolução
+ProcessandoArquivo --> AtualizandoBase : Arquivo processado
+AtualizandoBase --> Concluido : Base atualizada
+ProcessandoArquivo --> Erro : Falha no processamento
+AtualizandoBase --> Erro : Falha na atualização
+Concluido --> MenuAdmin : Continuar gerenciando
+Erro --> MenuAdmin : Tentar novamente
+MenuAdmin --> [*] : Sair
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+actor Usuário
+participant Sistema
+participant LLM
+
+Usuário -> Sistema: acessa campo de pergunta
+Usuário -> Sistema: digita dúvida sobre resolução
+Usuário -> Sistema: clica em "Enviar"
+
+alt Processamento de Pergunta
+    Sistema -> Sistema: processa pergunta
+    Sistema -> Sistema: busca contexto relevante
+    Sistema -> LLM: envia pergunta e contexto
+    LLM -> Sistema: retorna resposta baseada na resolução
+    Sistema -> Usuário: exibe resposta ao usuário
+    Sistema -> Sistema: salva pergunta e resposta no histórico
+end
+@enduml
