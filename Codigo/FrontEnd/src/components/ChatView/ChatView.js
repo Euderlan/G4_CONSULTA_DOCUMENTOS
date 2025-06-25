@@ -10,7 +10,7 @@ import {
   ThumbsDown,
   AlertTriangle,
   Copy,
-  FileText, // <-- Importe FileText aqui para o ícone das fontes
+  FileText,
   Clock
 } from 'lucide-react';
 import './ChatView.css';
@@ -58,23 +58,27 @@ const ChatView = ({
               <History size={20} />
             </button>
 
-            {/* Renderiza o botão Admin apenas se o usuário for admin */}
-            {user?.isAdmin && (
+            {/* Botão Admin - apenas para administradores */}
+            {(user?.isAdmin || user?.email === 'admin@ufma.br') && (
               <button
                 onClick={() => setCurrentView('admin')}
-                className="header-button"
-                title="Administração"
+                className="header-button admin-button"
+                title="Painel Administrativo"
               >
                 <Shield size={20} />
               </button>
             )}
-            
-            {/* Resolução de conflito: Mantive a exibição das informações do usuário e o botão de logout */}
+
+            {/* Informações do usuário com avatar */}
             <div className="user-info">
               <img 
-                src={user?.avatar} 
-                alt="Avatar" 
+                src={user?.picture || user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'User')}&background=2563eb&color=fff&size=40`}
+                alt="Avatar do usuário" 
                 className="user-avatar"
+                onError={(e) => {
+                  // Fallback caso a imagem não carregue
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'User')}&background=2563eb&color=fff&size=40`;
+                }}
               />
               <div className="user-details">
                 <div className="user-name">
@@ -109,7 +113,7 @@ const ChatView = ({
                 )}
                 <p>{message.text}</p>
 
-                {/* --- NOVA SEÇÃO PARA EXIBIR FONTES --- */}
+                {/* Seção para exibir fontes */}
                 {message.sender === 'bot' && message.sources && message.sources.length > 0 && (
                   <div className="message-sources">
                     <h4>Fontes Consultadas:</h4>
@@ -117,8 +121,8 @@ const ChatView = ({
                       {message.sources.map((source, index) => (
                         <li key={index} className="source-item">
                           <FileText size={14} className="source-icon" />
-                          <strong>{source.filename}</strong>
-                          {source.content && ( // Opcional: exibe um snippet do conteúdo
+                          <strong className="source-filename">{source.filename}</strong>
+                          {source.content && (
                             <span className="source-content-snippet">
                               : "{source.content.substring(0, 150)}..."
                             </span>
@@ -128,7 +132,6 @@ const ChatView = ({
                     </ul>
                   </div>
                 )}
-                {/* --- FIM DA NOVA SEÇÃO --- */}
 
                 <div className="message-actions">
                   {message.sender === 'bot' && (
@@ -223,7 +226,7 @@ const ChatView = ({
         </div>
 
         <div className="input-tip">
-          <span> Dica: Use perguntas específicas para obter melhores respostas</span>
+          <span>Dica: Use perguntas específicas para obter melhores respostas</span>
         </div>
       </div>
     </div>

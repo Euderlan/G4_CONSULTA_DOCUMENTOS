@@ -58,6 +58,7 @@
 
 .header-right {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -74,6 +75,64 @@
 .header-button:hover {
   background-color: #e5e7eb;
   color: #1f2937;
+}
+
+/* Estilo específico para o botão admin */
+.admin-button {
+  color: #dc2626;
+}
+
+.admin-button:hover {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+/* ========== USER INFO STYLES ========== */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid #e5e7eb;
+}
+
+.user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  object-fit: cover;
+  transition: border-color 0.2s ease;
+}
+
+.user-avatar:hover {
+  border-color: #2563eb;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+/* Badge para admin */
+.user-role.admin {
+  color: #dc2626;
+  font-weight: 500;
 }
 
 .chat-main {
@@ -94,7 +153,7 @@
 
 .chat-message {
   display: flex;
-  max-width: 70%; /* Ajuste a largura máxima para mensagens */
+  max-width: 70%;
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
   position: relative;
@@ -103,14 +162,14 @@
 
 .chat-message.user {
   align-self: flex-end;
-  background-color: #d1e7ff; /* Um azul mais suave para o usuário */
+  background-color: #d1e7ff;
   color: #1a202c;
   border-bottom-right-radius: 0;
 }
 
 .chat-message.bot {
   align-self: flex-start;
-  background-color: #e2e8f0; /* Um cinza mais claro para o bot */
+  background-color: #e2e8f0;
   color: #2d3748;
   border-bottom-left-radius: 0;
 }
@@ -125,8 +184,8 @@
 .message-content p {
   margin: 0;
   line-height: 1.5;
-  white-space: pre-wrap; /* Preserva quebras de linha e espaços */
-  word-wrap: break-word; /* Quebra palavras longas */
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .message-actions {
@@ -140,7 +199,7 @@
 .message-timestamp {
   font-size: 0.75rem;
   color: #6b7280;
-  white-space: nowrap; /* Evita que o timestamp quebre */
+  white-space: nowrap;
 }
 
 .feedback-button,
@@ -152,14 +211,14 @@
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
-  display: flex; /* Para centralizar o ícone */
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .feedback-button:hover,
 .copy-button:hover {
-  background-color: #d1e7ff; /* Cor de hover suave */
+  background-color: #d1e7ff;
   color: #2563eb;
 }
 
@@ -167,7 +226,7 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  color: #dc3545; /* Cor vermelha para erro */
+  color: #dc3545;
 }
 
 .loading-message {
@@ -237,9 +296,9 @@
   border-bottom: 1px solid #e5e7eb;
   transition: background-color 0.2s;
   cursor: pointer;
-  display: flex; /* Para alinhar o ícone */
+  display: flex;
   align-items: center;
-  gap: 8px; /* Espaçamento entre o ícone e o texto */
+  gap: 8px;
 }
 
 .suggestion-item:last-child {
@@ -274,7 +333,7 @@
   font-size: 1rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  padding-right: 3rem; /* Espaço para o contador de caracteres se fosse implementado */
+  padding-right: 3rem;
 }
 
 .chat-input:focus {
@@ -323,65 +382,78 @@
   text-align: center;
 }
 
-/* ========================================= */
-/* --- NOVAS REGRAS PARA FONTES CONSULTADAS --- */
-/* ========================================= */
+/* ========== FONTES CONSULTADAS ========== */
 .message-sources {
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid #e5e7eb; /* Adiciona uma linha sutil para separar */
+  border-top: 1px solid #e5e7eb;
   font-size: 0.85em;
-  color: #6b7280; /* Cor de texto secundária */
+  color: #6b7280;
 }
 
 .message-sources h4 {
-  font-size: 0.95em; /* Ligeiramente menor que o texto principal */
+  font-size: 0.95em;
   margin-bottom: 6px;
-  color: #374151; /* Cor mais escura para o título das fontes */
-  font-weight: 600; /* Um pouco mais de destaque */
+  color: #374151;
+  font-weight: 600;
 }
 
 .message-sources ul {
-  list-style: none; /* Remove bullet points padrão */
+  list-style: none;
   padding-left: 0;
   margin-bottom: 0;
 }
 
 .source-item {
   display: flex;
-  align-items: flex-start; /* Alinha o ícone e o texto no topo */
-  margin-bottom: 4px; /* Espaçamento entre os itens da lista de fontes */
+  align-items: flex-start;
+  margin-bottom: 4px;
   line-height: 1.4;
 }
 
 .source-icon {
   margin-right: 6px;
-  color: #2563eb; /* Um azul vibrante para o ícone */
-  flex-shrink: 0; /* Impede que o ícone encolha */
-  padding-top: 2px; /* Pequeno ajuste visual para alinhar com o texto */
+  color: #2563eb;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .source-filename {
   font-weight: bold;
-  color: #1f2937; /* Mais escuro para o nome do arquivo */
-  word-break: break-word; /* Garante que nomes de arquivos longos quebrem */
+  color: #1f2937;
+  word-break: break-word;
 }
 
 .source-content-snippet {
-  color: #6b7280; /* Mesma cor de texto secundária */
-  margin-left: 5px; /* Espaçamento entre o nome do arquivo e o snippet */
+  color: #6b7280;
+  margin-left: 5px;
   font-style: italic;
-  word-break: break-word; /* Garante que o snippet quebre */
+  word-break: break-word;
 }
 
-/* Responsividade Básica */
+/* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 768px) {
   .chat-message {
-    max-width: 90%; /* Aumenta a largura em telas menores */
+    max-width: 90%;
   }
 
   .chat-header {
     padding: 0.75rem 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .user-info {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+    width: 100%;
+    justify-content: space-between;
   }
 
   .header-title {
@@ -403,14 +475,31 @@
 
 @media (max-width: 480px) {
   .header-content {
-    flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
   }
 
   .header-right {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .user-info {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .user-avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .user-name {
+    font-size: 0.8rem;
+  }
+
+  .user-role {
+    font-size: 0.7rem;
   }
 
   .chat-message {
@@ -423,5 +512,10 @@
 
   .send-button {
     padding: 0.6rem 0.8rem;
+  }
+
+  /* Esconder badge admin em telas muito pequenas */
+  .admin-badge {
+    display: none;
   }
 }
