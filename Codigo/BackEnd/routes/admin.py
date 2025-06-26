@@ -7,6 +7,9 @@ from pathlib import Path
 import logging
 from dotenv import load_dotenv
 
+# NOVA IMPORTAÇÃO - ÚNICA LINHA ADICIONADA
+from routes.document_processor import process_and_index_pdf
+
 # Configuração básica
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -53,25 +56,23 @@ async def list_documents():
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload de documento PDF com:
-    - Validação de tipo
-    - Limite de tamanho
-    - Geração de metadados
+    Upload de documento PDF com processamento automático e indexação
     """
-    # Validações
+    # Validações (CÓDIGO ORIGINAL MANTIDO)
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas arquivos PDF são aceitos"
         )
 
+    file_path = None
     try:
-        # Gera nome único preservando a extensão
+        # Gera nome único preservando a extensão (CÓDIGO ORIGINAL MANTIDO)
         file_ext = Path(file.filename).suffix
         file_id = f"{datetime.now().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}{file_ext}"
         file_path = os.path.join(UPLOAD_DIR, file_id)
         
-        # Salva em stream com verificação de tamanho
+        # Salva em stream com verificação de tamanho (CÓDIGO ORIGINAL MANTIDO)
         file_size = 0
         with open(file_path, "wb") as buffer:
             while chunk := await file.read(8192):  # 8KB chunks
@@ -84,18 +85,48 @@ async def upload_document(file: UploadFile = File(...)):
                     )
                 buffer.write(chunk)
         
-        # Retorna metadados completos
-        return {
-            "id": file_id,
-            "original_name": file.filename,
-            "size": file_size,
-            "upload_date": datetime.now().isoformat(),
-            "file_path": file_path
-        }
+        # NOVA FUNCIONALIDADE - PROCESSAMENTO AUTOMÁTICO
+        logger.info(f"Iniciando processamento automático de {file.filename}")
+        try:
+            processing_result = await process_and_index_pdf(file_path, file.filename)
+            logger.info(f"Processamento concluído: {processing_result}")
+            
+            # Retorna metadados completos + resultado do processamento
+            return {
+                "id": file_id,
+                "original_name": file.filename,
+                "size": file_size,
+                "upload_date": datetime.now().isoformat(),
+                "file_path": file_path,
+                "processing_result": processing_result,  # NOVO
+                "status": "success",
+                "message": f"Documento '{file.filename}' carregado e indexado com sucesso!"
+            }
+            
+        except Exception as processing_error:
+            # Se falhar no processamento, remove o arquivo e informa erro
+            logger.error(f"Erro no processamento de {file.filename}: {processing_error}")
+            
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Arquivo removido após falha no processamento: {file_path}")
+            
+            # Re-lança erro para informar o usuário
+            if isinstance(processing_error, HTTPException):
+                raise processing_error
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Falha no processamento do documento: {str(processing_error)}"
+                )
 
     except HTTPException:
         raise
     except Exception as e:
+        # Remove arquivo em caso de erro geral
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+            
         logger.error(f"Upload error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
