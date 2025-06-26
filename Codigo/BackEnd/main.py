@@ -71,3 +71,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 async def root():
     return {"message": "UFMA RAG API com FastAPI funcionando! Acesse /docs para a documentação interativa."}
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
