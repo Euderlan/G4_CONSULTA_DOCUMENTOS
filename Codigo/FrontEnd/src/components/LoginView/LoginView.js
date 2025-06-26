@@ -1,6 +1,6 @@
 // FrontEnd/src/components/LoginView/LoginView.js
 import React, { useState } from 'react';
-import { MessageSquare, User, Shield } from 'lucide-react';
+import { MessageSquare, User, } from 'lucide-react';
 import GoogleLoginButton from '../GoogleLoginButton/GoogleLoginButton';
 import './LoginView.css';
 
@@ -331,10 +331,10 @@ const LoginView = ({
 
                 
                 {/* Info Box com usuários de teste */}
-                <div className="info-box info-box-blue">
+                <div>
                   <p className="info-text">
-                    <Shield className="info-icon" />
-                    <strong>Usuários de Teste:</strong>
+              
+                    
                   </p>
                   <div className="admin-credentials">
                     <div>
@@ -346,7 +346,7 @@ const LoginView = ({
                           opacity: isLoading ? 0.5 : 1
                         }}
                       >
-                        🔵 <strong>Admin:</strong> admin@ufma.br / admin123
+              
                       </span>
                     </div>
                     <div>
@@ -358,7 +358,7 @@ const LoginView = ({
                           opacity: isLoading ? 0.5 : 1
                         }}
                       >
-                        🟢 <strong>Usuário:</strong> usuario@gmail.com / user123
+                        
                       </span>
                     </div>
                   </div>
@@ -435,14 +435,6 @@ const LoginView = ({
                 )}
               </button>
               
-              {/* Info Box para cadastro */}
-              <div className="info-box info-box-green">
-                <p className="info-text">
-                  <User className="info-icon" />
-                  <strong>Cadastro para usuários do sistema</strong>
-                </p>
-
-              </div>
             </div>
           )}
         </div>
