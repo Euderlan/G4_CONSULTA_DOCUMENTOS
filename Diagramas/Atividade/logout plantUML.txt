@@ -1,0 +1,12 @@
+
+
+@startuml
+title Processo de Logout - Sistema UFMA
+start
+:Usuário acessa menu superior;
+:Clica em opção "Sair";
+:Sistema encerra sessão atual;
+:Sistema limpa dados de autenticação;
+:Redireciona para tela inicial;
+stop
+@enduml

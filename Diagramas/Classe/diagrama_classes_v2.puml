@@ -1,0 +1,86 @@
+@startuml
+
+class Usuario {
+  + id: String
+  + nome: String
+  + email: String
+  + senha: String
+  + tipo: String
+  + fazerLogin()
+  + criarConta()
+  + logout()
+  + fazerPergunta()
+  + avaliarResposta()
+  + verHistorico()
+}
+
+class Conta {
+  + id: String
+  + tipo_login: String
+  + data_criacao: Date
+}
+
+class Sessao {
+  + id: String
+  + token: String
+  + data_inicio: Date
+  + data_fim: Date
+  + encerrarSessao()
+}
+
+class Conversa {
+  + id: String
+  + data_inicio: Date
+  + data_ultima_interacao: Date
+}
+
+class Pergunta {
+  + id: String
+  + texto_pergunta: String
+  + data_hora: Date
+  + excluir()
+  + repetir()
+}
+
+class Resposta {
+  + id: String
+  + texto_resposta: String
+  + data_hora: Date
+  + status: String
+  + registrarFeedbackPositivo()
+  + registrarFeedbackNegativo()
+  + marcarParaRevisao()
+}
+
+class Resolucao {
+  + id: String
+  + conteudo: String
+  + data_criacao: Date
+  + data_ultima_atualizacao: Date
+  + adicionar()
+  + editar()
+  + remover()
+}
+
+class BaseVetorial {
+  + id: String
+  + nome: String
+  + descricao: String
+  + data_ultima_atualizacao: Date
+  + atualizar()
+}
+
+Usuario "1" -- "0..1" Conta : tem >
+Usuario "1" -- "0..N" Sessao : tem >
+Usuario "1" -- "0..N" Conversa : inicia >
+Usuario "1" -- "0..N" Pergunta : faz >
+Usuario "1" -- "0..N" Resolucao : gerencia >
+
+Conversa "1" *-- "1..N" Pergunta : contem >
+Pergunta "1" -- "1" Resposta : tem >
+
+Resolucao "0..N" -- "0..1" BaseVetorial : associada a >
+Pergunta "0..N" -- "0..N" BaseVetorial : consulta >
+
+@enduml
+

@@ -1,0 +1,36 @@
+
+@startuml
+!theme plain
+skinparam state {
+    BorderColor DarkBlue
+    FontSize 12
+}
+
+[*] --> Aguardando : Sistema pronto
+
+state Aguardando {
+    Aguardando : Campo disponível para pergunta
+}
+
+state Processando {
+    Processando : Sistema processando pergunta
+    Processando : Consultando base + LLM
+}
+
+state Respondendo {
+    Respondendo : Exibindo resposta
+    Respondendo : Salvando no histórico
+}
+
+state Erro {
+    Erro : Falha no processamento
+}
+
+Aguardando --> Processando : Usuário envia pergunta
+Processando --> Respondendo : Resposta gerada
+Processando --> Erro : Falha
+Respondendo --> Aguardando : Nova pergunta
+Erro --> Aguardando : Tentar novamente
+Aguardando --> [*] : Sair
+
+@enduml
