@@ -27,13 +27,13 @@ class HybridDocumentProcessor:
     """Processador HÍBRIDO: LangChain chunking + Sentence Transformers embeddings"""
     
     def __init__(self):
-        # Configurações otimizadas baseadas nos seus códigos
-        self.chunk_size = 1500      # Tamanho médio ideal
-        self.chunk_overlap = 200    # 13% overlap como no código exemplo
+        # Configurações muito otimizadas para máxima preservação do contexto
+        self.chunk_size = 2500      # Tamanho ainda maior para manter muito mais contexto
+        self.chunk_overlap = 600    # Overlap muito maior para excelente continuidade
         self.batch_size = 32        # Processamento em lotes grandes
         
     def extract_text_from_pdf(self, file_path: str) -> str:
-        """Extração rápida de texto - baseada no seu open_file()"""
+        """Extração rápida de texto - baseada no open_file() otimizado"""
         try:
             reader = PdfReader(file_path)
             all_text = ""
@@ -63,10 +63,10 @@ class HybridDocumentProcessor:
             raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
     
     def create_smart_chunks(self, text: str, filename: str) -> List[Dict[str, Any]]:
-        """Chunking INTELIGENTE usando LangChain (como no seu código 02)"""
+        """Chunking INTELIGENTE usando LangChain para melhor qualidade de contexto"""
         
         if LANGCHAIN_AVAILABLE:
-            # Usa LangChain para chunking inteligente (MELHOR QUALIDADE)
+            # Usa LangChain para chunking inteligente com separadores otimizados
             text_splitter = RecursiveCharacterTextSplitter(
                 separators=["\n\n", "\n", ".", "!", "?", ";", ",", " "],  # Separadores inteligentes
                 chunk_size=self.chunk_size,
@@ -79,7 +79,7 @@ class HybridDocumentProcessor:
             metadatas = [{"filename": filename}]
             langchain_docs = text_splitter.create_documents([text], metadatas=metadatas)
             
-            # Converte para o formato do seu sistema
+            # Converte para o formato do sistema
             chunks = []
             for i, doc in enumerate(langchain_docs):
                 if len(doc.page_content.strip()) > 50:  # Pula chunks muito pequenos
@@ -96,14 +96,14 @@ class HybridDocumentProcessor:
             logger.info(f"✅ LangChain criou {len(chunks)} chunks inteligentes")
             
         else:
-            # Fallback para chunking manual (se LangChain não estiver disponível)
+            # Fallback para chunking manual otimizado
             chunks = self._manual_chunking(text, filename)
             logger.info(f"✅ Chunking manual criou {len(chunks)} chunks")
             
         return chunks
     
     def _manual_chunking(self, text: str, filename: str) -> List[Dict[str, Any]]:
-        """Chunking manual de backup"""
+        """Chunking manual de backup com configurações otimizadas"""
         chunks = []
         text_length = len(text)
         start = 0
@@ -144,9 +144,9 @@ class HybridDocumentProcessor:
         return chunks
     
     def batch_generate_embeddings(self, contents: List[str]) -> List[List[float]]:
-        """Embeddings em lote super otimizado"""
+        """Embeddings em lote super otimizado para alta performance"""
         try:
-            # Carrega modelo uma vez só (como no seu código 03)
+            # Carrega modelo uma vez só para eficiência
             if not hasattr(self, '_model'):
                 from sentence_transformers import SentenceTransformer
                 model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
@@ -179,7 +179,7 @@ class HybridDocumentProcessor:
             raise HTTPException(status_code=500, detail=f"Erro nos embeddings: {str(e)}")
     
     def optimized_pinecone_insert(self, chunks: List[Dict], embeddings: List[List[float]], filename: str) -> Dict[str, Any]:
-        """Inserção otimizada no Pinecone"""
+        """Inserção otimizada no Pinecone com melhor controle de qualidade"""
         try:
             pinecone_index = get_pinecone_index()
             if not pinecone_index:
@@ -204,7 +204,7 @@ class HybridDocumentProcessor:
                     }
                 })
             
-            # Inserção em lotes grandes (como no seu vectorstore.from_documents)
+            # Inserção em lotes grandes para melhor performance
             batch_size = 100
             total_inserted = 0
             
@@ -225,7 +225,9 @@ class HybridDocumentProcessor:
                 "filename": filename,
                 "total_chunks": len(chunks),
                 "vectors_inserted": total_inserted,
-                "chunking_method": "langchain" if LANGCHAIN_AVAILABLE else "manual"
+                "chunking_method": "langchain" if LANGCHAIN_AVAILABLE else "manual",
+                "chunk_size": self.chunk_size,
+                "chunk_overlap": self.chunk_overlap
             }
                 
         except Exception as e:
@@ -233,33 +235,33 @@ class HybridDocumentProcessor:
             raise HTTPException(status_code=500, detail=f"Falha na indexação: {str(e)}")
     
     async def process_pdf_hybrid(self, file_path: str, filename: str) -> Dict[str, Any]:
-        """Pipeline HÍBRIDO: melhor dos seus códigos + otimizações"""
+        """Pipeline HÍBRIDO completo: melhor qualidade com performance otimizada"""
         start_time = datetime.now()
         
         try:
             logger.info(f"🚀 === PROCESSAMENTO HÍBRIDO DE {filename} ===")
             
-            # Etapa 1: Extração (baseada no seu open_file)
+            # Etapa 1: Extração de texto otimizada
             logger.info("📖 Extraindo texto...")
             text_content = self.extract_text_from_pdf(file_path)
             
-            # Etapa 2: Chunking inteligente (baseado no seu código 02)
+            # Etapa 2: Chunking inteligente com configurações melhoradas
             logger.info("✂️ Chunking inteligente...")
             chunks = self.create_smart_chunks(text_content, filename)
             
             if not chunks:
                 raise ValueError("Nenhum chunk válido criado")
             
-            # Etapa 3: Embeddings em lote (otimizado)
+            # Etapa 3: Embeddings em lote otimizado
             logger.info("🧠 Gerando embeddings...")
             contents = [chunk["content"] for chunk in chunks]
             embeddings = self.batch_generate_embeddings(contents)
             
-            # Etapa 4: Indexação (baseada no seu vectorstore.from_documents)
+            # Etapa 4: Indexação otimizada
             logger.info("📤 Indexando...")
             index_result = self.optimized_pinecone_insert(chunks, embeddings, filename)
             
-            # Resultado final
+            # Resultado final com métricas detalhadas
             processing_time = (datetime.now() - start_time).total_seconds()
             
             final_result = {
@@ -267,7 +269,8 @@ class HybridDocumentProcessor:
                 "text_length": len(text_content),
                 "processing_time_seconds": round(processing_time, 2),
                 "chunks_per_second": round(len(chunks) / processing_time, 2),
-                "optimization": "hybrid_langchain_sentence_transformers"
+                "optimization": "hybrid_langchain_sentence_transformers",
+                "avg_chunk_size": round(sum(len(chunk["content"]) for chunk in chunks) / len(chunks), 2)
             }
             
             logger.info(f"🎉 === CONCLUÍDO EM {processing_time:.1f}s ===")
@@ -283,5 +286,5 @@ hybrid_processor = HybridDocumentProcessor()
 
 # Função wrapper
 async def process_and_index_pdf(file_path: str, filename: str) -> Dict[str, Any]:
-    """Versão HÍBRIDA: melhor dos seus códigos"""
+    """Versão HÍBRIDA: melhor qualidade de contexto e performance"""
     return await hybrid_processor.process_pdf_hybrid(file_path, filename)

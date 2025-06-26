@@ -57,13 +57,14 @@ async def send_message(
 
     Returns:
         dict: Um dicionário contendo a resposta gerada (`answer`),
-              as fontes dos documentos utilizados (`sources`) e um trecho do contexto completo (`context`).
+              as fontes dos documentos utilizados (`sources`), um trecho do contexto completo (`context`),
+              e informações de debug (`debug_info`).
 
     Raises:
         HTTPException: Erros HTTP são levantados para cenários como perguntas ausentes,
                        ou falhas na inicialização/acesso a serviços externos (Pinecone, Groq).
     """
-    try: # ESTE É O INÍCIO DO BLOCO TRY
+    try:
         question = request.question
         
         if not question:
@@ -79,12 +80,12 @@ async def send_message(
         if not pinecone_index_instance:
             raise HTTPException(status_code=500, detail="O índice Pinecone não foi inicializado ou está inacessível. O serviço de busca de documentos está inoperante.")
 
-        # Realiza a consulta de similaridade no Pinecone.
+        # Realiza a consulta de similaridade no Pinecone com busca muito expandida para máxima cobertura.
         # top_k define o número de resultados mais semelhantes a serem retornados.
         # include_metadata=True é fundamental para recuperar o conteúdo textual original dos chunks e seus metadados.
         query_results = pinecone_index_instance.query(
             vector=question_embedding,
-            top_k=4, # Configurado para buscar os 4 chunks mais relevantes.
+            top_k=15, # Configurado para buscar os 15 chunks mais relevantes para máxima cobertura.
             include_metadata=True 
         )
 
@@ -98,40 +99,85 @@ async def send_message(
             filename = match.metadata.get('filename', 'N/A')
             score = match.score # A pontuação de similaridade do Pinecone.
             
-            context_parts.append(content) # Adiciona o conteúdo do chunk ao contexto para o LLM.
-            sources.append({
-                'filename': filename,
-                'score': score,
-                'conteudo': content[:200] + "..." if len(content) > 200 else content # Trecho do conteúdo para exibição como fonte.
-            })
+            # Verifica se o conteúdo não está vazio antes de adicionar
+            if content.strip():
+                # Adiciona identificação do documento para melhor contexto
+                context_parts.append(f"[DOCUMENTO: {filename}]\n{content}")
+                sources.append({
+                    'filename': filename,
+                    'score': score,
+                    'conteudo': content[:200] + "..." if len(content) > 200 else content # Trecho do conteúdo para exibição como fonte.
+                })
+
+        # Sistema de fallback: se temos poucos resultados, busca mais agressivamente
+        if len(context_parts) < 5:
+            logger.info("Poucos chunks encontrados, executando busca expandida")
+            
+            expanded_query = pinecone_index_instance.query(
+                vector=question_embedding,
+                top_k=25,  # Busca muito mais ampla
+                include_metadata=True 
+            )
+            
+            # Adiciona resultados adicionais sem threshold muito restritivo
+            for match in expanded_query.matches[len(context_parts):]:
+                content = match.metadata.get('content', '')
+                filename = match.metadata.get('filename', 'Documento')
+                score = match.score
+                
+                if content.strip() and len(context_parts) < 12:  # Limita a 12 chunks totais
+                    context_parts.append(f"[FONTE: {filename} - Score: {score:.2f}]\n{content}")
+                    sources.append({
+                        'filename': filename,
+                        'score': score,
+                        'conteudo': content[:150] + "..."
+                    })
         
         # Concatena todos os conteúdos dos chunks relevantes para formar o contexto completo para o LLM.
         context = "\n\n".join(context_parts) 
 
-        # Etapa 3: Construção do prompt.
-        # O prompt é formatado para instruir o LLM a atuar como um assistente especializado e
-        # a basear sua resposta no contexto fornecido.
+        # Log detalhado para monitoramento e debug da qualidade da busca
+        logger.info(f"Pergunta recebida: {question}")
+        logger.info(f"Chunks encontrados: {len(context_parts)}")
+        logger.info(f"Tamanho do contexto gerado: {len(context)} caracteres")
+        if query_results.matches:
+            scores = [f'{m.score:.3f}' for m in query_results.matches[:3]]
+            logger.info(f"Principais scores de similaridade: {scores}")
+
+        # Etapa 3: Construção do prompt muito flexível e otimizado.
+        # O prompt é formatado para instruir o LLM a ser maximamente útil
+        # priorizando qualquer informação que possa ajudar o usuário.
         prompt = f"""Você é um assistente especializado em documentos da UFMA (Universidade Federal do Maranhão).
 
-Pergunta: {question}
+Pergunta do usuário: {question}
 
-Contexto dos documentos da UFMA:
+Contexto dos documentos:
 {context}
 
-Responda de forma clara e precisa baseando-se apenas nas informações fornecidas dos documentos da UFMA:""" # <<< ESTA LINHA FECHA A STRING PROMPT
+Instruções:
+- Use QUALQUER informação relevante do contexto, mesmo que seja parcial
+- Se não há resposta exata, forneça informações relacionadas que possam ajudar
+- Seja proativo em explicar conceitos relacionados encontrados nos documentos
+- Se encontrar procedimentos similares ou regras gerais, mencione-os
+- Sempre tente ser útil, mesmo com informações incompletas
+- Cite especificamente quais documentos você está consultando
+
+Resposta detalhada:"""
         
         # Etapa 4: Geração da resposta utilizando o modelo de linguagem da Groq.
-        try: # Bloco 'try' interno para a chamada da API Groq
+        try:
             response = client.chat.completions.create(
                 model="llama3-8b-8192", # Especifica o modelo LLM a ser utilizado.
                 messages=[{"role": "user", "content": prompt}], # O prompt é passado como uma mensagem do usuário.
-                max_tokens=1000, # Define o limite máximo de tokens para a resposta do LLM.
-                temperature=0.3 # Controla a criatividade da resposta (valores menores = mais diretos/factuais).
+                max_tokens=2000, # Define o limite máximo de tokens para respostas mais completas.
+                temperature=0.05, # Temperatura muito baixa para máxima precisão e consistência.
+                top_p=0.95 # Controle adicional da diversidade de resposta
             )
             
             answer = response.choices[0].message.content # Extrai o texto da resposta do LLM.
+            logger.info(f"Resposta gerada: {answer[:100]}...")
             
-        except Exception as e: # Bloco 'except' interno
+        except Exception as e:
             logger.error(f"Erro ao processar a requisição com o modelo Groq: {e}", exc_info=True)
             answer = f"Ocorreu um erro ao processar a resposta do modelo de linguagem: {str(e)}"
         
@@ -155,9 +201,15 @@ Responda de forma clara e precisa baseando-se apenas nas informações fornecida
         return {
             'answer': answer,
             'sources': sources,
-            'context': context[:500] + "..." if len(context) > 500 else context # Trecho do contexto completo para visualização.
+            'context': context[:800] + "..." if len(context) > 800 else context, # Trecho maior do contexto para visualização.
+            'debug_info': {  # Informações de debug para monitoramento da qualidade
+                'chunks_found': len(context_parts),
+                'context_length': len(context),
+                'similarity_scores': [f"{s['score']:.3f}" for s in sources[:5]],
+                'total_results': len(query_results.matches)
+            }
         }
         
-    except Exception as e: # ESTE É O BLOCO EXCEPT QUE FINALIZA O TRY PRINCIPAL
+    except Exception as e:
         logger.error(f"Erro interno ao processar a mensagem do chat: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
