@@ -1,4 +1,3 @@
-# ========== VERSÃO HÍBRIDA MELHORADA: routes/document_processor.py ==========
 import os
 import logging
 import uuid
@@ -55,11 +54,11 @@ class HybridDocumentProcessor:
             if not all_text.strip():
                 raise ValueError("Nenhum texto extraído do PDF")
                 
-            logger.info(f"✅ Texto extraído: {len(all_text):,} caracteres de {max_pages} páginas")
+            logger.info(f"Texto extraído: {len(all_text):,} caracteres de {max_pages} páginas")
             return all_text
             
         except Exception as e:
-            logger.error(f"❌ Erro ao extrair texto: {e}")
+            logger.error(f"Erro ao extrair texto: {e}")
             raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
     
     def create_smart_chunks(self, text: str, filename: str) -> List[Dict[str, Any]]:
@@ -93,12 +92,12 @@ class HybridDocumentProcessor:
                         }
                     })
             
-            logger.info(f"✅ LangChain criou {len(chunks)} chunks inteligentes")
+            logger.info(f"LangChain criou {len(chunks)} chunks inteligentes")
             
         else:
             # Fallback para chunking manual otimizado
             chunks = self._manual_chunking(text, filename)
-            logger.info(f"✅ Chunking manual criou {len(chunks)} chunks")
+            logger.info(f"Chunking manual criou {len(chunks)} chunks")
             
         return chunks
     
@@ -151,16 +150,16 @@ class HybridDocumentProcessor:
                 from sentence_transformers import SentenceTransformer
                 model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
                 
-                logger.info(f"🚀 Carregando modelo {model_name}...")
+                logger.info(f"Carregando modelo {model_name}...")
                 self._model = SentenceTransformer(
                     model_name,
                     device='cpu',
                     trust_remote_code=False
                 )
-                logger.info("✅ Modelo carregado e otimizado!")
+                logger.info("Modelo carregado e otimizado!")
             
             # Processa em lotes otimizados
-            logger.info(f"🔄 Gerando {len(contents)} embeddings em lote...")
+            logger.info(f"Gerando {len(contents)} embeddings em lote...")
             
             embeddings = self._model.encode(
                 contents,
@@ -171,11 +170,11 @@ class HybridDocumentProcessor:
                 device='cpu'  # Força CPU para estabilidade
             )
             
-            logger.info(f"✅ {len(embeddings)} embeddings gerados com sucesso!")
+            logger.info(f"{len(embeddings)} embeddings gerados com sucesso!")
             return embeddings.tolist()
             
         except Exception as e:
-            logger.error(f"❌ Erro ao gerar embeddings: {e}")
+            logger.error(f"Erro ao gerar embeddings: {e}")
             raise HTTPException(status_code=500, detail=f"Erro nos embeddings: {str(e)}")
     
     def optimized_pinecone_insert(self, chunks: List[Dict], embeddings: List[List[float]], filename: str) -> Dict[str, Any]:
@@ -208,16 +207,16 @@ class HybridDocumentProcessor:
             batch_size = 100
             total_inserted = 0
             
-            logger.info(f"📤 Inserindo {len(vectors_to_insert)} vetores...")
+            logger.info(f"Inserindo {len(vectors_to_insert)} vetores...")
             
             for i in range(0, len(vectors_to_insert), batch_size):
                 batch = vectors_to_insert[i:i + batch_size]
                 try:
                     pinecone_index.upsert(vectors=batch)
                     total_inserted += len(batch)
-                    logger.info(f"✅ Lote {i//batch_size + 1}: {len(batch)} vetores")
+                    logger.info(f"Lote {i//batch_size + 1}: {len(batch)} vetores")
                 except Exception as e:
-                    logger.error(f"❌ Erro no lote: {e}")
+                    logger.error(f"Erro no lote: {e}")
                     continue
             
             return {
@@ -231,7 +230,7 @@ class HybridDocumentProcessor:
             }
                 
         except Exception as e:
-            logger.error(f"❌ Erro na indexação: {e}")
+            logger.error(f"Erro na indexação: {e}")
             raise HTTPException(status_code=500, detail=f"Falha na indexação: {str(e)}")
     
     async def process_pdf_hybrid(self, file_path: str, filename: str) -> Dict[str, Any]:
@@ -239,26 +238,26 @@ class HybridDocumentProcessor:
         start_time = datetime.now()
         
         try:
-            logger.info(f"🚀 === PROCESSAMENTO HÍBRIDO DE {filename} ===")
+            logger.info(f"=== PROCESSAMENTO HÍBRIDO DE {filename} ===")
             
             # Etapa 1: Extração de texto otimizada
-            logger.info("📖 Extraindo texto...")
+            logger.info("Extraindo texto...")
             text_content = self.extract_text_from_pdf(file_path)
             
             # Etapa 2: Chunking inteligente com configurações melhoradas
-            logger.info("✂️ Chunking inteligente...")
+            logger.info("Chunking inteligente...")
             chunks = self.create_smart_chunks(text_content, filename)
             
             if not chunks:
                 raise ValueError("Nenhum chunk válido criado")
             
             # Etapa 3: Embeddings em lote otimizado
-            logger.info("🧠 Gerando embeddings...")
+            logger.info("Gerando embeddings...")
             contents = [chunk["content"] for chunk in chunks]
             embeddings = self.batch_generate_embeddings(contents)
             
             # Etapa 4: Indexação otimizada
-            logger.info("📤 Indexando...")
+            logger.info("Indexando...")
             index_result = self.optimized_pinecone_insert(chunks, embeddings, filename)
             
             # Resultado final com métricas detalhadas
@@ -273,12 +272,12 @@ class HybridDocumentProcessor:
                 "avg_chunk_size": round(sum(len(chunk["content"]) for chunk in chunks) / len(chunks), 2)
             }
             
-            logger.info(f"🎉 === CONCLUÍDO EM {processing_time:.1f}s ===")
+            logger.info(f"=== CONCLUÍDO EM {processing_time:.1f}s ===")
             return final_result
             
         except Exception as e:
             processing_time = (datetime.now() - start_time).total_seconds()
-            logger.error(f"❌ Erro após {processing_time:.1f}s: {e}")
+            logger.error(f"Erro após {processing_time:.1f}s: {e}")
             raise
 
 # Instância global

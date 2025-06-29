@@ -6,8 +6,6 @@ from datetime import datetime
 from pathlib import Path
 import logging
 from dotenv import load_dotenv
-
-# NOVA IMPORTAÇÃO - ÚNICA LINHA ADICIONADA
 from routes.document_processor import process_and_index_pdf
 
 # Configuração básica
@@ -58,7 +56,7 @@ async def upload_document(file: UploadFile = File(...)):
     """
     Upload de documento PDF com processamento automático e indexação
     """
-    # Validações (CÓDIGO ORIGINAL MANTIDO)
+    # Validações 
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,12 +65,12 @@ async def upload_document(file: UploadFile = File(...)):
 
     file_path = None
     try:
-        # Gera nome único preservando a extensão (CÓDIGO ORIGINAL MANTIDO)
+        # Gera nome único preservando a extensão 
         file_ext = Path(file.filename).suffix
         file_id = f"{datetime.now().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}{file_ext}"
         file_path = os.path.join(UPLOAD_DIR, file_id)
         
-        # Salva em stream com verificação de tamanho (CÓDIGO ORIGINAL MANTIDO)
+        # Salva em stream com verificação de tamanho 
         file_size = 0
         with open(file_path, "wb") as buffer:
             while chunk := await file.read(8192):  # 8KB chunks
@@ -85,7 +83,7 @@ async def upload_document(file: UploadFile = File(...)):
                     )
                 buffer.write(chunk)
         
-        # NOVA FUNCIONALIDADE - PROCESSAMENTO AUTOMÁTICO
+        # PROCESSAMENTO AUTOMÁTICO
         logger.info(f"Iniciando processamento automático de {file.filename}")
         try:
             processing_result = await process_and_index_pdf(file_path, file.filename)
