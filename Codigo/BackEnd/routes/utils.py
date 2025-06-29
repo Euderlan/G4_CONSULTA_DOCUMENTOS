@@ -1,4 +1,3 @@
-# routes/utils.py
 # Módulo para encapsular funcionalidades centrais do Retrieval-Augmented Generation (RAG).
 # Inclui a geração de embeddings, interação com o banco de dados vetorial Pinecone,
 # e funcionalidades de busca simples para fallback.
@@ -8,7 +7,7 @@ import logging
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, Index, PodSpec, ServerlessSpec
-import time # Adicionado para usar time.sleep
+import time 
 
 # Configuração do logger para monitoramento e depuração
 logger = logging.getLogger(__name__)
@@ -17,7 +16,6 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Armazenamento em memória para documentos processados
-# EM PRODUÇÃO: Este deve ser substituído por um banco de dados persistente (ex: Firestore, PostgreSQL)
 document_store = []
 
 # --- Configuração do Modelo de Embeddings ---
@@ -86,8 +84,8 @@ try:
                     dimension=embedding_dimensions,  # Dimensão configurável
                     metric='cosine',
                     spec=ServerlessSpec(
-                        cloud='aws', # Escolha a cloud apropriada, ex: 'aws', 'gcp', 'azure'
-                        region='us-east-1' # Escolha a região apropriada
+                        cloud='aws', 
+                        region='us-east-1' 
                     )
                 )
                 logger.info(f"Índice '{index_name}' criado com sucesso com {embedding_dimensions} dimensões.")
