@@ -1,70 +1,156 @@
-# Getting Started with Create React App
+# Sistema de Consultas de Documentos - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este é o frontend do Sistema de Consultas, desenvolvido em React, que oferece uma interface moderna e intuitiva para consultas inteligentes de documentos universitários.
 
-## Available Scripts
+## 📋 Pré-requisitos
 
-In the project directory, you can run:
+- Node.js 16+ instalado
+- npm
+- Backend da aplicação rodando (porta 8000)
 
-### `npm start`
+## 🚀 Configuração e Execução
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. Instalação das Dependências
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+# Navegue até a pasta do frontend
+cd FrontEnd
 
-### `npm test`
+# Instale as dependências
+npm install
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2. Executar a Aplicação
 
-### `npm run build`
+#### Modo Desenvolvimento
+```bash
+# Inicia o servidor de desenvolvimento
+npm start
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+A aplicação será aberta automaticamente em: **http://localhost:3000**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 3. Verificar se está funcionando
 
-### `npm run eject`
+- Acesse: http://localhost:3000
+- Você deve ver a tela de login do sistema
+- Teste o login com as credenciais padrão ou Google OAuth
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 📁 Estrutura do Projeto
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+FrontEnd/
+├── public/
+│   ├── index.html          # HTML principal
+│   └── manifest.json       # Configurações PWA
+├── src/
+│   ├── components/         # Componentes React
+│   │   ├── LoginView/      # Tela de login
+│   │   ├── ChatView/       # Interface principal de chat
+│   │   ├── HistoryView/    # Histórico de conversas
+│   │   ├── AdminView/      # Painel administrativo
+│   │   └── GoogleLoginButton/ # Botão de login Google
+│   ├── App.js             # Componente principal
+│   ├── App.css            # Estilos globais
+│   ├── index.js           # Ponto de entrada
+│   └── index.css          # Estilos base
+├── package.json           # Dependências e scripts
+├── .env                   # Variáveis de ambiente (não commitado)
+└── README.md             # Este arquivo
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🎨 Principais Funcionalidades
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### **Telas Disponíveis:**
 
-## Learn More
+1. **LoginView** - Autenticação
+   - Login tradicional (email/senha)
+   - Login com Google OAuth
+   - Cadastro de novos usuários
+   - Usuários de teste pré-configurados
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+2. **ChatView** - Interface Principal
+   - Chat inteligente com IA
+   - Sugestões de perguntas
+   - Exibição de fontes consultadas
+   - Sistema de feedback (👍/👎)
+   - Histórico de conversa na sessão
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. **HistoryView** - Histórico
+   - Visualização de conversas anteriores
+   - Busca e expansão de respostas
+   - Função de cópia de texto
 
-### Code Splitting
+4. **AdminView** - Painel Administrativo
+   - Upload de documentos PDF
+   - Gerenciamento de documentos
+   - Download de arquivos
+   - Controle de acesso restrito
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎯 Usuários de Teste
 
-### Analyzing the Bundle Size
+O sistema vem com usuário pré-configurado para teste:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### **Administrador:**
+- **Email:** `admin@ufma.br`
+- **Senha:** `admin123`
+- **Acesso:** Todas as funcionalidades + painel admin
 
-### Making a Progressive Web App
+## 🛠️ Dependências Principais
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```json
+{
+  "axios": "^1.10.0",           // Cliente HTTP
+  "lucide-react": "^0.515.0",   // Ícones
+  "react": "^19.1.0",           // Framework principal
+  "react-dom": "^19.1.0",       // DOM do React
+  "react-scripts": "5.0.1"      // Scripts de build
+}
+```
 
-### Advanced Configuration
+## 🐛 Solução de Problemas
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### **Erro: "Cannot connect to backend"**
+```bash
+# Verifique se o backend está rodando
+curl http://localhost:8000
 
-### Deployment
+# Confirme a URL no .env
+echo $REACT_APP_API_URL
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### **Erro: "Module not found"**
+```bash
+# Limpe e reinstale dependências
+rm -rf node_modules package-lock.json
+npm install
+```
 
-### `npm run build` fails to minify
+## 📱 Responsividade
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+A aplicação foi desenvolvida com design responsivo:
+- **Desktop:** Experiência completa
+- **Tablet:** Layout adaptado
+- **Mobile:** Interface otimizada para toque
+
+## 🔒 Autenticação e Segurança
+
+### **Tokens JWT:**
+- Tokens são armazenados no `localStorage`
+- Expiração automática configurável
+- Logout automático em caso de token inválido
+
+### **Rotas Protegidas:**
+- Redirecionamento automático para login
+- Verificação de permissões de admin
+- Estados de loading durante autenticação
+
+## 📞 Suporte
+No Readme principal
+
+**Desenvolvido para UFMA - Sistema de Consultas Inteligentes**
+
+Licença:
+
+Este projeto está licenciado sob a licença MIT.
