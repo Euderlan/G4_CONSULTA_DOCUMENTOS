@@ -7,21 +7,22 @@ import AdminView from './components/AdminView/AdminView';
 import './App.css';
 
 const UFMAConsultaSystem = () => {
-  // === ESTADOS PRINCIPAIS ===
-  const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('login');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [userHistory, setUserHistory] = useState([]);
-  const [documentVersion] = useState('RESOLUÇÃO Nº 1892-CONSEPE - v1.0 (28/06/2019)');
-  const [suggestions, setSuggestions] = useState([]);
+  // === ESTADOS PRINCIPAIS DA APLICAÇÃO ===
+  const [user, setUser] = useState(null); // Dados do usuário logado
+  const [currentView, setCurrentView] = useState('login'); // Controla qual tela está ativa
+  const [chatMessages, setChatMessages] = useState([]); // Histórico de mensagens do chat atual
+  const [currentMessage, setCurrentMessage] = useState(''); // Mensagem sendo digitada
+  const [isLoading, setIsLoading] = useState(false); // Estado de carregamento global
+  const [userHistory, setUserHistory] = useState([]); // Histórico de conversas salvas
+  const [documentVersion] = useState('RESOLUÇÃO Nº 1892-CONSEPE - v1.0 (28/06/2019)'); // Versão dos documentos
+  const [suggestions, setSuggestions] = useState([]); // Sugestões dinâmicas de perguntas
 
-  // === CONFIGURAÇÕES ===
+  // === CONFIGURAÇÕES E CONSTANTES ===
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-  const ADMIN_EMAIL = 'admin@ufma.br';
+  const ADMIN_EMAIL = 'admin@ufma.br'; // Email que define usuário admin
 
-  // === SUGESTÕES MEMORIZADAS ===
+  // === SUGESTÕES RÁPIDAS MEMORIZADAS ===
+  // useMemo evita recriação desnecessária do array a cada render
   const quickSuggestions = useMemo(() => [
     "Quais são os requisitos para transferência de curso?",
     "Como funciona o sistema de avaliação?",
@@ -30,7 +31,8 @@ const UFMAConsultaSystem = () => {
     "Documentos necessários para matrícula."
   ], []);
 
-  // === CARREGAR USUÁRIO DO LOCALSTORAGE ===
+  // === EFFECT PARA CARREGAR USUÁRIO DO LOCALSTORAGE ===
+  // Verifica se há sessão salva ao inicializar a aplicação
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -42,25 +44,27 @@ const UFMAConsultaSystem = () => {
         setCurrentView('chat');
       } catch (error) {
         console.error('Erro ao carregar usuário salvo:', error);
+        // Remove dados corrompidos
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
     }
   }, []);
 
-  // === FUNÇÃO PARA VERIFICAR SE USUÁRIO É ADMIN ===
+  // === FUNÇÃO PARA VERIFICAR PRIVILÉGIOS DE ADMINISTRADOR ===
   const isUserAdmin = useCallback((userData) => {
     return userData?.isAdmin === true || userData?.email === ADMIN_EMAIL;
   }, [ADMIN_EMAIL]);
 
-  // === AUTENTICAÇÃO E USUÁRIO ===
+  // === FUNÇÕES DE AUTENTICAÇÃO ===
+  // Callback executado após login bem-sucedido
   const onLoginSuccess = useCallback((userData, token) => {
     console.log('Login Success - User:', userData, 'Token:', token);
     
     setUser(userData);
     setCurrentView('chat');
     
-    // Salvar no localStorage
+    // Salvar dados da sessão no localStorage para persistência
     if (token) {
       localStorage.setItem('token', token);
     }
@@ -69,6 +73,7 @@ const UFMAConsultaSystem = () => {
     }
   }, []);
 
+  // Função para fazer logout e limpar sessão
   const handleLogout = useCallback(() => {
     setUser(null);
     setChatMessages([]);
@@ -78,13 +83,13 @@ const UFMAConsultaSystem = () => {
     alert('Você foi desconectado.');
   }, []);
 
-  // === FUNÇÃO PERSONALIZADA PARA MUDANÇA DE VIEW ===
+  // === FUNÇÃO PERSONALIZADA PARA MUDANÇA DE VIEW COM VALIDAÇÃO ===
   const handleViewChange = useCallback((newView) => {
     console.log('Tentando mudar para view:', newView);
     console.log('Usuário atual:', user);
     console.log('É admin?', isUserAdmin(user));
 
-    // Verificar se é tentativa de acesso à área admin
+    // Verificação de segurança para área administrativa
     if (newView === 'admin') {
       if (!isUserAdmin(user)) {
         alert('Acesso negado: Apenas administradores podem acessar esta área.');
@@ -96,18 +101,20 @@ const UFMAConsultaSystem = () => {
     console.log('View mudou para:', newView);
   }, [user, isUserAdmin]);
 
-  // === FEEDBACK E ERROS ===
+  // === FUNÇÃO PARA REPORTAR ERROS ===
   const reportError = useCallback((errorDetails) => {
     console.error("Erro reportado:", errorDetails);
     alert(`Um erro foi reportado: ${errorDetails}`);
   }, []);
 
-  // === FUNÇÕES DO CHAT ===
+  // === FUNÇÕES DO SISTEMA DE CHAT ===
+  // Gerencia mudanças no input de mensagem e filtra sugestões
   const handleInputChange = useCallback((event) => {
     setCurrentMessage(event.target.value);
     if (event.target.value === '') {
       setSuggestions([]);
     } else {
+      // Filtra sugestões baseadas no texto digitado
       const filteredSuggestions = quickSuggestions.filter(s =>
         s.toLowerCase().includes(event.target.value.toLowerCase())
       );
@@ -115,12 +122,14 @@ const UFMAConsultaSystem = () => {
     }
   }, [quickSuggestions]);
 
+  // Função principal para enviar mensagem ao backend
   const handleSendMessage = useCallback(async () => {
     if (!currentMessage.trim() || isLoading) return;
 
     setIsLoading(true);
     setSuggestions([]);
 
+    // Cria mensagem do usuário
     const newUserMessage = {
       id: chatMessages.length + 1,
       text: currentMessage,
@@ -144,6 +153,7 @@ const UFMAConsultaSystem = () => {
         body: JSON.stringify({ question: questionToSend }),
       });
 
+      // Verifica se a sessão ainda é válida
       if (!response.ok) {
         if (response.status === 401) {
           alert('Sessão expirada ou não autorizada. Por favor, faça login novamente.');
@@ -156,6 +166,7 @@ const UFMAConsultaSystem = () => {
       const data = await response.json();
       console.log("Resposta da API de chat:", data);
 
+      // Cria mensagem de resposta do bot
       const botMessage = {
         id: chatMessages.length + 2,
         text: data.answer,
@@ -175,6 +186,7 @@ const UFMAConsultaSystem = () => {
 
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
+      // Adiciona mensagem de erro ao chat
       setChatMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -191,16 +203,19 @@ const UFMAConsultaSystem = () => {
     }
   }, [currentMessage, isLoading, chatMessages.length, API_BASE_URL, handleLogout, reportError]);
 
+  // Permite envio de mensagem com tecla Enter
   const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter' && !isLoading) {
       handleSendMessage();
     }
   }, [handleSendMessage, isLoading]);
 
+  // Processa feedback do usuário sobre as respostas
   const handleFeedback = useCallback(async (messageId, feedbackType) => {
     alert(`Feedback "${feedbackType}" registrado para a mensagem ${messageId}.`);
   }, []);
 
+  // Copia texto para área de transferência
   const copyToClipboard = useCallback((text) => {
     navigator.clipboard.writeText(text).then(() => {
       alert('Texto copiado para a área de transferência!');
@@ -209,7 +224,8 @@ const UFMAConsultaSystem = () => {
     });
   }, []);
 
-  // === FUNÇÕES DE ADMIN E DOCUMENTOS ===
+  // === FUNÇÕES ADMINISTRATIVAS E GERENCIAMENTO DE DOCUMENTOS ===
+  // Faz upload de documento para o sistema
   const handleUploadDocument = useCallback(async (file) => {
     if (!file) {
       alert("Nenhum arquivo selecionado.");
@@ -244,6 +260,7 @@ const UFMAConsultaSystem = () => {
     }
   }, [API_BASE_URL, reportError]);
 
+  // Busca lista de documentos do sistema
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -271,6 +288,7 @@ const UFMAConsultaSystem = () => {
     }
   }, [API_BASE_URL, reportError]);
 
+  // Busca histórico de conversas do usuário
   const fetchUserHistory = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
@@ -296,18 +314,20 @@ const UFMAConsultaSystem = () => {
     }
   }, [user, API_BASE_URL, reportError]);
 
+  // Effect para carregar histórico quando usuário acessa a tela de histórico
   useEffect(() => {
     if (user && currentView === 'history') {
       fetchUserHistory();
     }
   }, [user, currentView, fetchUserHistory]);
 
-  // === PROPS COMPARTILHADAS ===
+  // === CONFIGURAÇÃO DE PROPS COMPARTILHADAS ===
+  // Objeto com todas as props que são passadas para os componentes filhos
   const sharedProps = {
     user,
     setUser,
     currentView,
-    setCurrentView: handleViewChange, // Usar a função personalizada
+    setCurrentView: handleViewChange, // Usar a função personalizada com validação
     chatMessages,
     setChatMessages,
     currentMessage,
@@ -335,6 +355,7 @@ const UFMAConsultaSystem = () => {
     isUserAdmin
   };
 
+  // Props específicas para o componente de login
   const loginProps = {
     API_BASE_URL,
     onLoginSuccess,
@@ -342,22 +363,25 @@ const UFMAConsultaSystem = () => {
     setIsLoading
   };
 
-  // === RENDERIZAÇÃO ===
+  // === RENDERIZAÇÃO CONDICIONAL BASEADA NO ESTADO ===
+  // Se não há usuário logado, mostra tela de login
   if (!user) {
     return <LoginView {...loginProps} />;
   }
 
-  // Debug logs
+  // Debug logs para desenvolvimento
   console.log('Current View:', currentView);
   console.log('User:', user);
   console.log('Is Admin:', isUserAdmin(user));
 
+  // Switch para renderizar a tela apropriada baseada na view atual
   switch (currentView) {
     case 'chat':
       return <ChatView {...sharedProps} />;
     case 'history':
       return <HistoryView {...sharedProps} />;
     case 'admin':
+      // Verificação adicional de segurança para área admin
       if (isUserAdmin(user)) {
         return <AdminView {...sharedProps} />;
       } else {
@@ -367,6 +391,7 @@ const UFMAConsultaSystem = () => {
         return <ChatView {...sharedProps} />;
       }
     default:
+      // Fallback padrão para o chat
       return <ChatView {...sharedProps} />;
   }
 };

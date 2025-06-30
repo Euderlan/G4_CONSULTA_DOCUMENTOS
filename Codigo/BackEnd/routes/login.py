@@ -67,7 +67,6 @@ class GoogleLoginRequest(BaseModel):
     family_name: Optional[str] = None
 
 # ========== BANCO DE DADOS EM MEMÓRIA ==========
-# Em produção, substitua por um banco real (PostgreSQL, MySQL, etc.)
 
 users_db = {
     "admin@ufma.br": {

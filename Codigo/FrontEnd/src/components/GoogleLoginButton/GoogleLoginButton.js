@@ -7,18 +7,24 @@ const GoogleLoginButton = ({
   disabled = false,
   clientId
 }) => {
+  // Referência para o elemento DOM onde o botão do Google será renderizado
   const googleButtonRef = useRef(null);
+  // Estado para controlar se a biblioteca do Google foi carregada
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  // Estado para controlar se o botão foi renderizado com sucesso
   const [isButtonRendered, setIsButtonRendered] = useState(false);
 
+  // Função para processar a resposta de autenticação do Google
   const handleCredentialResponse = useCallback(async (response) => {
     try {
       if (!response.credential) {
         throw new Error('Token de credencial não recebido');
       }
 
+      // Decodifica o JWT token para extrair informações do usuário
       const payload = JSON.parse(atob(response.credential.split('.')[1]));
       
+      // Organiza os dados do usuário em um objeto estruturado
       const userData = {
         google_token: response.credential,
         google_id: payload.sub,
@@ -38,18 +44,20 @@ const GoogleLoginButton = ({
     }
   }, [onSuccess, onError]);
 
+  // Função responsável por renderizar o botão do Google
   const renderGoogleButton = useCallback(() => {
+    // Verifica se todas as dependências estão disponíveis
     if (!window.google?.accounts?.id || !clientId || disabled || !googleButtonRef.current) {
       return;
     }
 
     try {
-      // Limpar conteúdo anterior
+      // Limpa o conteúdo anterior do container do botão
       if (googleButtonRef.current) {
         googleButtonRef.current.innerHTML = '';
       }
 
-      // Inicializar Google
+      // Inicializa a biblioteca do Google com as configurações
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredentialResponse,
@@ -57,7 +65,7 @@ const GoogleLoginButton = ({
         cancel_on_tap_outside: true,
       });
 
-      // Renderizar botão
+      // Renderiza o botão do Google com as opções de estilo
       window.google.accounts.id.renderButton(
         googleButtonRef.current,
         {
@@ -80,7 +88,7 @@ const GoogleLoginButton = ({
     }
   }, [clientId, disabled, handleCredentialResponse, onError]);
 
-  // Verificar se Google carregou
+  // Effect para verificar se a biblioteca do Google foi carregada
   useEffect(() => {
     let checkInterval;
     
@@ -95,9 +103,9 @@ const GoogleLoginButton = ({
       return false;
     };
 
-    // Verificar imediatamente
+    // Verifica imediatamente se o Google já está carregado
     if (!checkGoogleLoaded()) {
-      // Se não carregou, verificar a cada 100ms
+      // Se não carregou, verifica periodicamente a cada 100ms
       checkInterval = setInterval(() => {
         if (checkGoogleLoaded()) {
           clearInterval(checkInterval);
@@ -105,7 +113,7 @@ const GoogleLoginButton = ({
       }, 100);
     }
 
-    // Cleanup
+    // Cleanup: limpa o interval quando o componente é desmontado
     return () => {
       if (checkInterval) {
         clearInterval(checkInterval);
@@ -113,10 +121,10 @@ const GoogleLoginButton = ({
     };
   }, []);
 
-  // Renderizar botão quando Google carregar ou componente re-renderizar
+  // Effect para renderizar o botão quando o Google carregar
   useEffect(() => {
     if (isGoogleLoaded && !disabled) {
-      // Pequeno delay para garantir que o DOM está pronto
+      // Adiciona um pequeno delay para garantir que o DOM está pronto
       const timer = setTimeout(() => {
         renderGoogleButton();
       }, 100);
@@ -125,7 +133,7 @@ const GoogleLoginButton = ({
     }
   }, [isGoogleLoaded, disabled, renderGoogleButton]);
 
-  // Re-renderizar se o botão sumir (fallback)
+  // Effect de fallback para re-renderizar o botão se ele sumir
   useEffect(() => {
     if (isGoogleLoaded && !isButtonRendered && !disabled) {
       const retryTimer = setTimeout(() => {
@@ -137,7 +145,7 @@ const GoogleLoginButton = ({
     }
   }, [isGoogleLoaded, isButtonRendered, disabled, renderGoogleButton]);
 
-  // Loading state
+  // Estado de carregamento: exibido enquanto a biblioteca do Google não carrega
   if (!isGoogleLoaded) {
     return (
       <div 
@@ -169,7 +177,7 @@ const GoogleLoginButton = ({
     );
   }
 
-  // Disabled state
+  // Estado desabilitado: exibido quando o componente está processando
   if (disabled) {
     return (
       <button 
@@ -190,12 +198,13 @@ const GoogleLoginButton = ({
     );
   }
 
-  // Google button container com fallback
+  // Renderização principal: container do botão do Google com fallback
   return (
     <div style={{ width: '100%', minHeight: '40px' }}>
+      {/* Container onde o botão oficial do Google será renderizado */}
       <div ref={googleButtonRef} style={{ width: '100%' }}></div>
       
-      {/* Fallback se o botão não renderizar */}
+      {/* Botão de fallback caso o botão oficial não renderize */}
       {isGoogleLoaded && !isButtonRendered && (
         <button
           onClick={() => {
@@ -212,6 +221,7 @@ const GoogleLoginButton = ({
             gap: '8px'
           }}
         >
+          {/* Ícone do Google em SVG */}
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

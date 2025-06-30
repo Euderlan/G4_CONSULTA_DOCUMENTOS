@@ -1,6 +1,6 @@
 // FrontEnd/src/components/LoginView/LoginView.js
 import React, { useState } from 'react';
-import { MessageSquare, User, Shield } from 'lucide-react';
+import { MessageSquare, User, } from 'lucide-react';
 import GoogleLoginButton from '../GoogleLoginButton/GoogleLoginButton';
 import './LoginView.css';
 
@@ -11,24 +11,29 @@ const LoginView = ({
   setIsLoading
 }) => {
   // === ESTADOS LOCAIS DO COMPONENTE ===
+  // Estado para credenciais de login tradicional
   const [credentials, setCredentials] = useState({ 
     email: '', 
     password: '' 
   });
+  // Estado para dados de registro de novo usuário
   const [registerData, setRegisterData] = useState({ 
     name: '', 
     email: '', 
     password: '', 
     confirmPassword: '' 
   });
+  // Estado para controlar qual formulário está ativo (login ou registro)
   const [loginMode, setLoginMode] = useState('traditional'); // 'traditional' ou 'register'
 
   // === FUNÇÕES DE VALIDAÇÃO ===
+  // Valida formato de email usando regex
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
+  // Valida formulário de login antes do envio
   const validateLoginForm = () => {
     if (!credentials.email || !credentials.password) {
       alert('Por favor, preencha email e senha!');
@@ -43,6 +48,7 @@ const LoginView = ({
     return true;
   };
 
+  // Valida formulário de registro com múltiplas verificações
   const validateRegisterForm = () => {
     // Validação de campos obrigatórios
     if (!registerData.name || !registerData.email || !registerData.password) {
@@ -78,6 +84,7 @@ const LoginView = ({
   };
 
   // === FUNÇÃO DE LOGIN TRADICIONAL ===
+  // Processa login com email e senha
   const handleLogin = async () => {
     if (!validateLoginForm()) return;
 
@@ -97,13 +104,13 @@ const LoginView = ({
       const data = await response.json();
       
       if (response.ok) {
-        // Sucesso - chama callback do App.js
+        // Sucesso - chama callback do App.js para atualizar estado global
         onLoginSuccess(data.user, data.access_token);
         
-        // Limpa formulário
+        // Limpa formulário após sucesso
         setCredentials({ email: '', password: '' });
       } else {
-        // Erro - mostra mensagem
+        // Erro - mostra mensagem de erro específica
         alert('Erro no login: ' + (data.detail || 'Email ou senha incorretos.'));
       }
     } catch (error) {
@@ -115,6 +122,7 @@ const LoginView = ({
   };
 
   // === FUNÇÃO DE REGISTRO ===
+  // Processa criação de nova conta de usuário
   const handleRegister = async () => {
     if (!validateRegisterForm()) return;
 
@@ -135,7 +143,7 @@ const LoginView = ({
       const data = await response.json();
       
       if (response.ok) {
-        // Sucesso - mostra mensagem e volta para login
+        // Sucesso - mostra mensagem e redireciona para login
         alert('🎉 Cadastro realizado com sucesso!\n\nAgora você pode fazer login com suas credenciais.');
         
         // Limpa formulário de registro
@@ -149,13 +157,13 @@ const LoginView = ({
         // Volta para tela de login
         setLoginMode('traditional');
         
-        // Pré-preenche email no login
+        // Pré-preenche email no formulário de login
         setCredentials({ 
           email: registerData.email, 
           password: '' 
         });
       } else {
-        // Erro - mostra mensagem específica
+        // Erro - mostra mensagem específica do backend
         const errorMessage = data.detail || 'Erro desconhecido no cadastro.';
         alert('Erro no cadastro: ' + errorMessage);
       }
@@ -168,6 +176,7 @@ const LoginView = ({
   };
 
   // === FUNÇÕES DO GOOGLE LOGIN ===
+  // Processa login bem-sucedido via Google OAuth
   const handleGoogleSuccess = async (userData) => {
     setIsLoading(true);
     try {
@@ -197,12 +206,14 @@ const LoginView = ({
     }
   };
 
+  // Trata erros do Google OAuth
   const handleGoogleError = (error) => {
     console.error('Google Login Error:', error);
     alert('Falha no login com Google. Tente novamente.');
   };
 
   // === FUNÇÃO PARA TESTE RÁPIDO (DESENVOLVIMENTO) ===
+  // Preenche credenciais rapidamente para testes
   const handleQuickLogin = (email, password) => {
     setCredentials({ email, password });
     // Pequeno delay para mostrar que preencheu
@@ -212,6 +223,7 @@ const LoginView = ({
   };
 
   // === HANDLERS DE FORMULÁRIO ===
+  // Permite envio de formulário com Enter
   const handleKeyDown = (e, action) => {
     if (e.key === 'Enter' && !isLoading) {
       e.preventDefault();
@@ -219,9 +231,10 @@ const LoginView = ({
     }
   };
 
+  // Gerencia troca entre abas de login e registro
   const handleTabSwitch = (mode) => {
     setLoginMode(mode);
-    // Limpa formulários ao trocar de aba
+    // Limpa formulários ao trocar de aba para evitar confusão
     if (mode === 'traditional') {
       setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
     } else {
@@ -232,7 +245,7 @@ const LoginView = ({
   // === RENDER ===
   return (
     <div className="login-container">
-      {/* Background Animation */}
+      {/* Animação de fundo decorativa */}
       <div className="background-animation">
         <div className="floating-element element-1"></div>
         <div className="floating-element element-2"></div>
@@ -241,7 +254,7 @@ const LoginView = ({
       </div>
 
       <div className="login-card">
-        {/* Header */}
+        {/* Cabeçalho com branding do sistema */}
         <div className="login-header">
           <div className="logo-container">
             <MessageSquare size={40} />
@@ -251,9 +264,9 @@ const LoginView = ({
           <p className="document-version">Resoluções da UFMA</p>
         </div>
 
-        {/* Content */}
+        {/* Conteúdo principal com formulários */}
         <div className="login-content">
-          {/* Tab Buttons */}
+          {/* Botões de navegação entre Login e Cadastro */}
           <div className="tab-buttons">
             <button
               onClick={() => handleTabSwitch('traditional')}
@@ -271,7 +284,7 @@ const LoginView = ({
             </button>
           </div>
 
-          {/* Login Form */}
+          {/* Formulário de Login */}
           {loginMode === 'traditional' ? (
             <div className="form-container">
               <div className="form-group">
@@ -301,6 +314,7 @@ const LoginView = ({
               </div>
               
               <div className="button-group">
+                {/* Botão principal de login */}
                 <button
                   onClick={handleLogin}
                   disabled={isLoading}
@@ -319,7 +333,7 @@ const LoginView = ({
                   )}
                 </button>
                 
-                {/* Google Login Button */}
+                {/* Componente de login com Google */}
                 <GoogleLoginButton
                   clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
                   onSuccess={handleGoogleSuccess}
@@ -330,11 +344,11 @@ const LoginView = ({
                   {/* DEBUG EXPANDIDO */}
 
                 
-                {/* Info Box com usuários de teste */}
-                <div className="info-box info-box-blue">
+                {/* Seção de teste rápido com credenciais pré-definidas */}
+                <div>
                   <p className="info-text">
-                    <Shield className="info-icon" />
-                    <strong>Usuários de Teste:</strong>
+              
+                    
                   </p>
                   <div className="admin-credentials">
                     <div>
@@ -346,7 +360,7 @@ const LoginView = ({
                           opacity: isLoading ? 0.5 : 1
                         }}
                       >
-                        🔵 <strong>Admin:</strong> admin@ufma.br / admin123
+              
                       </span>
                     </div>
                     <div>
@@ -358,7 +372,7 @@ const LoginView = ({
                           opacity: isLoading ? 0.5 : 1
                         }}
                       >
-                        🟢 <strong>Usuário:</strong> usuario@gmail.com / user123
+                        
                       </span>
                     </div>
                   </div>
@@ -366,7 +380,7 @@ const LoginView = ({
               </div>
             </div>
           ) : (
-            /* Register Form */
+            /* Formulário de Registro */
             <div className="form-container">
               <div className="form-group">
                 <label className="form-label">Nome Completo</label>
@@ -417,6 +431,7 @@ const LoginView = ({
                 />
               </div>
               
+              {/* Botão de criação de conta */}
               <button
                 onClick={handleRegister}
                 disabled={isLoading}
@@ -435,19 +450,11 @@ const LoginView = ({
                 )}
               </button>
               
-              {/* Info Box para cadastro */}
-              <div className="info-box info-box-green">
-                <p className="info-text">
-                  <User className="info-icon" />
-                  <strong>Cadastro para usuários do sistema</strong>
-                </p>
-
-              </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Rodapé com termos de uso */}
         <div className="terms-text">
           <p>Ao fazer login, você concorda com nossos termos de uso</p>
         </div>

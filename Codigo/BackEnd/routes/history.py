@@ -1,4 +1,3 @@
-# routes/history.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Optional
@@ -31,7 +30,6 @@ class SaveChatRequest(BaseModel):
     sources: Optional[List[dict]] = []
 
 # ========== ARMAZENAMENTO EM MEMÓRIA ==========
-# IMPORTANTE: Em produção, substituir por banco de dados real!
 
 # Dicionário principal que armazena o histórico de todos os usuários
 # Estrutura: {email_do_usuario: [lista_de_conversas]}
@@ -64,7 +62,6 @@ def add_chat_entry(user_email: str, question: str, answer: str, sources: List[di
         user_email: Email do usuário
         question: Pergunta feita
         answer: Resposta gerada
-        sources: Documentos consultados (opcional)
     
     Returns:
         ID da nova entrada criada

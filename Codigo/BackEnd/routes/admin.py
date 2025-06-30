@@ -1,204 +1,182 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import os
-import io
-import shutil
 import uuid
-import json
 from datetime import datetime
-from PyPDF2 import PdfReader
+from pathlib import Path
 import logging
 from dotenv import load_dotenv
-from pathlib import Path
+from routes.document_processor import process_and_index_pdf
 
-# Importa as funções para geração de embedding e acesso ao Pinecone
-from routes.utils import generate_embedding, get_pinecone_index
-
-# Carrega variáveis de ambiente
+# Configuração básica
 load_dotenv()
-
-# Configura o logger
 logger = logging.getLogger(__name__)
-
-# Cria o APIRouter
 router = APIRouter()
 
-# Diretório base e arquivo de metadados
-UPLOAD_BASE_DIR = "uploaded_documents"
-METADATA_FILE = os.path.join(UPLOAD_BASE_DIR, "metadata.json")
-os.makedirs(UPLOAD_BASE_DIR, exist_ok=True)
+# Configurações otimizadas
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
-# Estrutura para armazenar metadados
-_document_metadata_store = {}
-
-# Funções para carregar e salvar metadados no disco
-def load_metadata_store():
-    if os.path.exists(METADATA_FILE):
-        try:
-            with open(METADATA_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Erro ao ler metadata.json: {e}")
-    return {}
-
-def save_metadata_store():
+@router.get("/documents")
+async def list_documents():
+    """Lista todos os documentos armazenados com metadados"""
+    documents = []
     try:
-        with open(METADATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(_document_metadata_store, f, ensure_ascii=False, indent=2)
+        for filename in os.listdir(UPLOAD_DIR):
+            if filename.endswith('.pdf'):
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                stat = os.stat(file_path)
+                
+                # Extrai o nome original se estiver no formato correto
+                original_name = filename
+                if '_' in filename:
+                    parts = filename.split('_')
+                    if len(parts) > 2:
+                        original_name = '_'.join(parts[2:])
+                
+                documents.append({
+                    "id": filename,
+                    "original_name": original_name,
+                    "size": stat.st_size,
+                    "upload_date": datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                    "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                })
+        
+        return JSONResponse(content=documents)
     except Exception as e:
-        logger.error(f"Erro ao salvar metadata.json: {e}")
+        logger.error(f"Error listing documents: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao listar documentos"
+        )
 
-# Carrega os metadados existentes na inicialização
-_document_metadata_store = load_metadata_store()
-
-def get_safe_filename(original_filename: str) -> str:
-    """Gera um nome de arquivo seguro com timestamp e UUID"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    unique_id = str(uuid.uuid4())[:8]
-    file_ext = Path(original_filename).suffix
-    return f"{timestamp}_{unique_id}{file_ext}"
-
-def save_file_to_disk(contents: bytes, filename: str) -> str:
-    """Salva conteúdo de bytes como arquivo no disco"""
-    file_dir = os.path.join(UPLOAD_BASE_DIR, datetime.now().strftime("%Y-%m-%d"))
-    os.makedirs(file_dir, exist_ok=True)
-    file_path = os.path.join(file_dir, filename)
-    with open(file_path, "wb") as buffer:
-        buffer.write(contents)
-    return file_path
-
-@router.post("/upload")
+@router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload de documento PDF com:
-    - Validação
-    - Armazenamento no disco
-    - Extração de texto
-    - Indexação no Pinecone
-    - Salvamento de metadados
+    Upload de documento PDF com processamento automático e indexação
     """
-    if not file:
-        raise HTTPException(status_code=400, detail='Nenhum arquivo foi fornecido.')
-    if file.content_type != 'application/pdf':
-        raise HTTPException(status_code=400, detail='Apenas arquivos PDF são aceitos.')
+    # Validações 
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos PDF são aceitos"
+        )
 
+    file_path = None
     try:
-        safe_filename = get_safe_filename(file.filename)
-
-        # Lê o conteúdo do arquivo apenas uma vez
-        contents = await file.read()
-
-        # Salva o PDF no disco
-        file_path = save_file_to_disk(contents, safe_filename)
-        logger.info(f"Arquivo salvo em: {file_path}")
-
-        # Processa o texto
-        reader = PdfReader(io.BytesIO(contents))
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text() or ""
-
-        if not text.strip():
-            raise HTTPException(status_code=400, detail="O PDF não contém texto extraível.")
-
-        # Segmenta texto
-        chunk_size = 1000
-        overlap = 200
-        chunks = []
-        start = 0
-        text_length = len(text)
-
-        while start < text_length:
-            end = min(start + chunk_size, text_length)
-            chunk_content = text[start:end]
-            if chunk_content:
-                chunks.append(chunk_content)
-            start = end - overlap
-            if start < 0:
-                start = 0
-
-        # Indexa no Pinecone
-        pinecone_index = get_pinecone_index()
-        if not pinecone_index:
-            raise HTTPException(status_code=500, detail="Serviço de indexação indisponível.")
-
-        vectors_to_upsert = []
-        for i, chunk_content in enumerate(chunks):
-            chunk_embedding = generate_embedding(chunk_content)
-            chunk_id = f"{safe_filename}_{i}"
-
-            vectors_to_upsert.append({
-                "id": chunk_id,
-                "values": chunk_embedding,
-                "metadata": {
-                    "original_filename": file.filename,
-                    "stored_filename": safe_filename,
-                    "file_path": file_path,
-                    "chunk_id": i,
-                    "content": chunk_content
-                }
-            })
-
-        if vectors_to_upsert:
-            pinecone_index.upsert(vectors=vectors_to_upsert)
-            logger.info(f"Indexados {len(vectors_to_upsert)} chunks no Pinecone")
-
-        # Salva metadados
-        _document_metadata_store[safe_filename] = {
-            "original_filename": file.filename,
-            "upload_time": datetime.now().isoformat(),
-            "file_path": file_path,
-            "file_size": len(contents),
-            "chunks_count": len(chunks),
-            "status": "indexed"
-        }
-        save_metadata_store()
-
-        return {
-            "message": "Documento processado com sucesso",
-            "original_filename": file.filename,
-            "stored_filename": safe_filename,
-            "chunks_indexed": len(chunks),
-            "file_path": file_path
-        }
+        # Gera nome único preservando a extensão 
+        file_ext = Path(file.filename).suffix
+        file_id = f"{datetime.now().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}{file_ext}"
+        file_path = os.path.join(UPLOAD_DIR, file_id)
+        
+        # Salva em stream com verificação de tamanho 
+        file_size = 0
+        with open(file_path, "wb") as buffer:
+            while chunk := await file.read(8192):  # 8KB chunks
+                file_size += len(chunk)
+                if file_size > MAX_FILE_SIZE:
+                    os.remove(file_path)
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"Arquivo excede o tamanho máximo de {MAX_FILE_SIZE//(1024*1024)}MB"
+                    )
+                buffer.write(chunk)
+        
+        # PROCESSAMENTO AUTOMÁTICO
+        logger.info(f"Iniciando processamento automático de {file.filename}")
+        try:
+            processing_result = await process_and_index_pdf(file_path, file.filename)
+            logger.info(f"Processamento concluído: {processing_result}")
+            
+            # Retorna metadados completos + resultado do processamento
+            return {
+                "id": file_id,
+                "original_name": file.filename,
+                "size": file_size,
+                "upload_date": datetime.now().isoformat(),
+                "file_path": file_path,
+                "processing_result": processing_result,  # NOVO
+                "status": "success",
+                "message": f"Documento '{file.filename}' carregado e indexado com sucesso!"
+            }
+            
+        except Exception as processing_error:
+            # Se falhar no processamento, remove o arquivo e informa erro
+            logger.error(f"Erro no processamento de {file.filename}: {processing_error}")
+            
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Arquivo removido após falha no processamento: {file_path}")
+            
+            # Re-lança erro para informar o usuário
+            if isinstance(processing_error, HTTPException):
+                raise processing_error
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Falha no processamento do documento: {str(processing_error)}"
+                )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro no upload: {str(e)}", exc_info=True)
+        # Remove arquivo em caso de erro geral
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+            
+        logger.error(f"Upload error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao processar documento: {str(e)}"
+            detail="Falha no processamento do documento"
         )
 
-@router.get("/documents")
-async def list_documents():
-    """Lista todos os documentos com metadados"""
-    return {
-        "documents": list(_document_metadata_store.values()),
-        "total_documents": len(_document_metadata_store)
-    }
+@router.get("/download/{file_id}")
+async def download_document(file_id: str):
+    """Endpoint para download direto de documentos"""
+    try:
+        file_path = os.path.join(UPLOAD_DIR, file_id)
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Documento não encontrado"
+            )
+        
+        # Obtém o nome original do arquivo se disponível
+        original_filename = file_id
+        if '_' in file_id:
+            parts = file_id.split('_')
+            if len(parts) > 2:
+                original_filename = '_'.join(parts[2:])
+        
+        return FileResponse(
+            path=file_path,
+            filename=original_filename,
+            media_type='application/pdf'
+        )
+    except Exception as e:
+        logger.error(f"Download error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao recuperar documento"
+        )
 
-@router.get("/document/{filename}")
-async def get_document(filename: str):
-    """Retorna os metadados de um documento específico"""
-    if filename not in _document_metadata_store:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    doc_info = _document_metadata_store[filename]
-    if not os.path.exists(doc_info["file_path"]):
-        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado")
-    return doc_info
-
-@router.get("/download/{filename}")
-async def download_document(filename: str):
-    """Download do arquivo original PDF"""
-    if filename not in _document_metadata_store:
-        raise HTTPException(status_code=404, detail="Documento não encontrado")
-    file_path = _document_metadata_store[filename]["file_path"]
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Arquivo físico não encontrado")
-    return FileResponse(
-        path=file_path,
-        filename=_document_metadata_store[filename]["original_filename"],
-        media_type="application/pdf"
-    )
+@router.delete("/document/{file_id}")
+async def delete_document(file_id: str):
+    """Remove um documento permanentemente"""
+    try:
+        file_path = os.path.join(UPLOAD_DIR, file_id)
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Documento não encontrado"
+            )
+            
+        os.remove(file_path)
+        return {"success": True, "message": "Documento removido com sucesso"}
+    except Exception as e:
+        logger.error(f"Delete error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao remover documento"
+        )
