@@ -35,25 +35,27 @@ const ChatView = ({
   setCurrentMessage,
   setSuggestions
 }) => {
-  // Estado para rastrear feedback dado para cada mensagem
+  // Estado local para rastrear feedback dado pelo usuário em cada mensagem
   const [messageFeedback, setMessageFeedback] = useState({});
 
-  // Função modificada para lidar com feedback
+  // Função wrapper para gerenciar feedback com estado visual local
   const handleFeedbackWithState = (messageId, feedbackType) => {
-    // Atualizar estado local para mostrar feedback visual
+    // Atualizar estado local para mostrar feedback visual imediato
     setMessageFeedback(prev => ({
       ...prev,
       [messageId]: feedbackType
     }));
     
-    // Chamar função original de feedback
+    // Chamar função original de feedback passada como prop
     handleFeedback(messageId, feedbackType);
   };
+
   return (
     <div className="chat-container">
-      {/* Header */}
+      {/* Cabeçalho da aplicação de chat */}
       <header className="chat-header">
         <div className="header-content">
+          {/* Lado esquerdo: Logo e informações do sistema */}
           <div className="header-left">
             <div className="header-logo">
               <MessageSquare size={24} />
@@ -64,7 +66,9 @@ const ChatView = ({
             </div>
           </div>
 
+          {/* Lado direito: Navegação e informações do usuário */}
           <div className="header-right">
+            {/* Botão para acessar histórico de conversas */}
             <button
               onClick={() => setCurrentView('history')}
               className="header-button"
@@ -73,7 +77,7 @@ const ChatView = ({
               <History size={20} />
             </button>
 
-            {/* Botão Admin - apenas para administradores */}
+            {/* Botão Admin - renderizado condicionalmente apenas para administradores */}
             {(user?.isAdmin || user?.email === 'admin@ufma.br') && (
               <button
                 onClick={() => setCurrentView('admin')}
@@ -84,14 +88,15 @@ const ChatView = ({
               </button>
             )}
 
-            {/* Informações do usuário com avatar */}
+            {/* Seção de informações do usuário logado */}
             <div className="user-info">
+              {/* Avatar gerado dinamicamente com fallback */}
               <img 
                 src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&backgroundColor=2563eb&radius=50`}
                 alt="Avatar do usuário" 
                 className="user-avatar"
                 onError={(e) => {
-                  // Fallback para outro serviço de avatar
+                  // Fallback para outro serviço de avatar em caso de erro
                   e.target.src = `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&backgroundColor=2563eb`;
                 }}
               />
@@ -115,10 +120,10 @@ const ChatView = ({
         </div>
       </header>
 
-      {/* Main Chat Area */}
+      {/* Área principal do chat */}
       <main className="chat-main">
         <div className="chat-messages">
-          {/* Mostrar sugestões iniciais quando não há mensagens */}
+          {/* Tela de boas-vindas com sugestões iniciais - mostrada quando não há mensagens */}
           {chatMessages.length === 0 && !isLoading && (
             <div className="welcome-suggestions">
               <div className="welcome-message">
@@ -143,9 +148,11 @@ const ChatView = ({
             </div>
           )}
 
+          {/* Renderização das mensagens do chat */}
           {chatMessages.map((message) => (
             <div key={message.id} className={`chat-message ${message.sender}`}>
               <div className="message-content">
+                {/* Indicador de erro para mensagens com problemas */}
                 {message.isError && (
                   <div className="error-indicator" title="Ocorreu um erro">
                     <AlertTriangle size={16} />
@@ -153,7 +160,7 @@ const ChatView = ({
                 )}
                 <p>{message.text}</p>
 
-                {/* Seção para exibir fontes */}
+                {/* Seção de fontes consultadas para respostas do bot */}
                 {message.sender === 'bot' && message.sources && message.sources.length > 0 && (
                   <div className="message-sources">
                     <h4>Fontes Consultadas:</h4>
@@ -173,7 +180,9 @@ const ChatView = ({
                   </div>
                 )}
 
+                {/* Ações disponíveis para as mensagens */}
                 <div className="message-actions">
+                  {/* Botões de feedback apenas para mensagens do bot */}
                   {message.sender === 'bot' && (
                     <>
                       <button
@@ -202,7 +211,7 @@ const ChatView = ({
                   <span className="message-timestamp">{message.timestamp}</span>
                 </div>
 
-                {/* Disclaimer separado abaixo das ações */}
+                {/* Disclaimer sobre possíveis erros do AI - apenas para mensagens do bot */}
                 {message.sender === 'bot' && (
                   <div className="message-disclaimer">
                     <span>O ConsultAI pode cometer erros. Confira sempre as respostas.</span>
@@ -211,6 +220,8 @@ const ChatView = ({
               </div>
             </div>
           ))}
+
+          {/* Indicador de carregamento quando o bot está processando */}
           {isLoading && (
             <div className="chat-message bot loading-message">
               <div className="message-content">
@@ -222,8 +233,9 @@ const ChatView = ({
         </div>
       </main>
 
-      {/* Chat Input Area */}
+      {/* Área de entrada de chat com sugestões e input */}
       <div className="chat-input-area">
+        {/* Container de sugestões contextuais - mostrado quando há sugestões disponíveis */}
         {suggestions.length > 0 && (
           <div className="suggestions-container">
             <div className="suggestions-list">
@@ -246,6 +258,7 @@ const ChatView = ({
           </div>
         )}
 
+        {/* Container principal do input de mensagem */}
         <div className="input-container">
           <div className="input-wrapper">
             <input
@@ -259,6 +272,7 @@ const ChatView = ({
             />
           </div>
 
+          {/* Botão de enviar mensagem */}
           <button
             onClick={handleSendMessage}
             disabled={isLoading || !currentMessage.trim()}
@@ -272,6 +286,7 @@ const ChatView = ({
           </button>
         </div>
 
+        {/* Dica de uso para o usuário */}
         <div className="input-tip">
           <span>Dica: Use perguntas específicas para obter melhores respostas</span>
         </div>

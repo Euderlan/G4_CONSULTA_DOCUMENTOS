@@ -20,11 +20,18 @@ const AdminView = ({
   setCurrentView,
   handleLogout
 }) => {
+  // Estados para controle de upload
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Estados gerais da aplicação
   const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState([]);
+  
+  // Estados para edição de documentos
   const [editingDocument, setEditingDocument] = useState(null);
+  
+  // Estados para modal de adição de documentos
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDocument, setNewDocument] = useState({
     title: '',
@@ -32,11 +39,12 @@ const AdminView = ({
     file: null
   });
 
-  // Carrega documentos do backend
+  // Função para buscar documentos do backend
   const fetchDocuments = async () => {
     setIsLoading(true);
     try {
       const response = await axios.get("http://localhost:8000/api/admin/documents");
+      // Formata os dados recebidos do backend para o formato usado no frontend
       const formattedDocs = response.data.map(doc => ({
         id: doc.id,
         title: doc.original_name,
@@ -55,12 +63,12 @@ const AdminView = ({
     }
   };
 
-  // Carrega documentos ao montar o componente
+  // Effect para carregar documentos ao montar o componente
   useEffect(() => {
     fetchDocuments();
   }, []);
 
-  // Upload de arquivo real
+  // Função para fazer upload real de arquivo para o backend
   const handleRealUpload = async (file) => {
     setIsUploading(true);
     setUploadProgress(0);
@@ -76,6 +84,7 @@ const AdminView = ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          // Callback para mostrar progresso do upload
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
@@ -85,7 +94,7 @@ const AdminView = ({
         }
       );
 
-      // Atualiza a lista após upload
+      // Atualiza a lista de documentos após o upload bem-sucedido
       await fetchDocuments();
       setNewDocument({ title: '', version: '', file: null });
       setShowAddModal(false);
@@ -98,9 +107,10 @@ const AdminView = ({
     }
   };
 
-  // Manipuladores de eventos
+  // Função para selecionar arquivo no input file
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
+    // Valida se o arquivo é PDF
     if (file && file.type === 'application/pdf') {
       setNewDocument(prev => ({ ...prev, file }));
     } else {
@@ -108,6 +118,7 @@ const AdminView = ({
     }
   };
 
+  // Função para iniciar o processo de adição de documento
   const handleAddDocument = () => {
     if (!newDocument.file) {
       alert('Por favor, selecione um arquivo.');
@@ -116,11 +127,13 @@ const AdminView = ({
     handleRealUpload(newDocument.file);
   };
 
+  // Função para iniciar edição de um documento
   const handleEditDocument = (docId) => {
     const doc = documents.find(d => d.id === docId);
     setEditingDocument({ ...doc });
   };
 
+  // Função para salvar as alterações na edição (apenas local, não persiste no backend)
   const handleSaveEdit = () => {
     setDocuments(prev => 
       prev.map(doc => 
@@ -132,15 +145,17 @@ const AdminView = ({
     setEditingDocument(null);
   };
 
-  // Adicione esta função nova
+  // Função para cancelar a edição
   const handleCancelEdit = () => {
     setEditingDocument(null);
   };
 
+  // Função para remover documento do backend
   const handleRemoveDocument = async (docId) => {
     if (window.confirm('Tem certeza que deseja remover este documento?')) {
       try {
         await axios.delete(`http://localhost:8000/api/admin/document/${docId}`);
+        // Remove o documento da lista local após sucesso no backend
         setDocuments(prev => prev.filter(doc => doc.id !== docId));
       } catch (error) {
         console.error("Erro ao remover documento:", error);
@@ -149,10 +164,12 @@ const AdminView = ({
     }
   };
 
+  // Função para fazer download do documento
   const handleDownloadDocument = (doc) => {
     window.open(doc.downloadUrl, '_blank');
   };
 
+  // Função para alternar status ativo/inativo do documento (apenas local)
   const toggleDocumentStatus = (docId) => {
     setDocuments(prev =>
       prev.map(doc =>
@@ -165,6 +182,7 @@ const AdminView = ({
 
   return (
     <div className="admin-container">
+      {/* Cabeçalho da página administrativa */}
       <header className="admin-header">
         <div className="admin-header-content">
           <div className="admin-header-left">
@@ -180,6 +198,7 @@ const AdminView = ({
             </h1>
           </div>
           <div className="admin-header-right">
+            {/* Botão para atualizar lista de documentos */}
             <button
               onClick={fetchDocuments}
               className="refresh-button"
@@ -198,8 +217,10 @@ const AdminView = ({
         </div>
       </header>
 
+      {/* Conteúdo principal da página */}
       <div className="admin-content">
         <div className="admin-section">
+          {/* Cabeçalho da seção de documentos */}
           <div className="admin-section-header">
             <h2 className="admin-section-title">
               <FileText className="admin-section-icon" />
@@ -218,6 +239,7 @@ const AdminView = ({
             </button>
           </div>
           
+          {/* Área de conteúdo: loading ou lista de documentos */}
           {isLoading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
@@ -225,19 +247,23 @@ const AdminView = ({
             </div>
           ) : (
             <div className="admin-documents">
+              {/* Estado vazio quando não há documentos */}
               {documents.length === 0 ? (
                 <div className="empty-state">
                   <FileText size={48} className="empty-icon" />
                   <p>Nenhum documento encontrado</p>
                 </div>
               ) : (
+                // Lista de documentos
                 documents.map((doc) => (
                   <div key={doc.id} className={`document-card ${!doc.isActive ? 'inactive' : ''}`}>
+                    {/* Informações do documento */}
                     <div className="document-info">
                       <div className="document-icon">
                         <FileText size={24} />
                       </div>
                       <div className="document-details">
+                        {/* Modo de edição vs modo de visualização */}
                         {editingDocument?.id === doc.id ? (
                           <div className="edit-form">
                             <input
@@ -263,6 +289,7 @@ const AdminView = ({
                         )}
                         <p className="document-updated">Última atualização: {doc.lastUpdated}</p>
                         <p className="document-size">Tamanho: {doc.size}</p>
+                        {/* Toggle de status ativo/inativo */}
                         <div className="document-status">
                           <button 
                             onClick={() => toggleDocumentStatus(doc.id)}
@@ -277,7 +304,9 @@ const AdminView = ({
                       </div>
                     </div>
                     
+                    {/* Ações do documento */}
                     <div className="document-actions">
+                      {/* Botões para modo de edição */}
                       {editingDocument?.id === doc.id ? (
                         <>
                           <button 
@@ -296,6 +325,7 @@ const AdminView = ({
                           </button>
                         </>
                       ) : (
+                        // Botões para modo normal
                         <>
                           <button 
                             onClick={() => handleEditDocument(doc.id)}
@@ -329,10 +359,11 @@ const AdminView = ({
         </div>
       </div>
 
-      {/* Modal para adicionar documento */}
+      {/* Modal para adicionar novo documento */}
       {showAddModal && (
         <div className="modal-overlay">
           <div className="modal-content">
+            {/* Cabeçalho do modal */}
             <div className="modal-header">
               <h3 className="modal-title">Adicionar Novo Documento</h3>
               <button 
@@ -344,6 +375,7 @@ const AdminView = ({
               </button>
             </div>
             
+            {/* Corpo do modal com formulário */}
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Título do Documento (opcional)</label>
@@ -367,6 +399,7 @@ const AdminView = ({
                 />
               </div>
               
+              {/* Input para seleção de arquivo */}
               <div className="form-group">
                 <label className="form-label">Arquivo PDF *</label>
                 <input
@@ -383,6 +416,7 @@ const AdminView = ({
                 )}
               </div>
 
+              {/* Barra de progresso do upload */}
               {isUploading && (
                 <div className="upload-progress">
                   <div className="progress-bar">
@@ -396,6 +430,7 @@ const AdminView = ({
               )}
             </div>
             
+            {/* Rodapé do modal com botões de ação */}
             <div className="modal-footer">
               <button 
                 onClick={() => setShowAddModal(false)}
