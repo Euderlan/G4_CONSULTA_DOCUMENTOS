@@ -56,6 +56,46 @@ const UFMAConsultaSystem = () => {
     return userData?.isAdmin === true || userData?.email === ADMIN_EMAIL;
   }, [ADMIN_EMAIL]);
 
+  // === FUNÇÃO PARA VERIFICAR SE USUÁRIO VIROU ADMIN ===
+  // Verifica periodicamente se o usuário foi promovido a admin
+  const checkUserAdminStatus = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/login/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        // Se o status de admin mudou, atualiza o usuário
+        if (userData.is_admin !== user.isAdmin) {
+          const updatedUser = {...user, isAdmin: userData.is_admin};
+          setUser(updatedUser);
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          if (userData.is_admin) {
+            alert('🎉 Parabéns! Você foi promovido a administrador!');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status admin:', error);
+    }
+  }, [user, API_BASE_URL]);
+
+  // === EFFECT PARA VERIFICAR STATUS ADMIN PERIODICAMENTE ===
+  useEffect(() => {
+    if (user && !user.isAdmin) {
+      // Verifica a cada 30 segundos se o usuário foi promovido
+      const interval = setInterval(checkUserAdminStatus, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, checkUserAdminStatus]);
+
   // === FUNÇÕES DE AUTENTICAÇÃO ===
   // Callback executado após login bem-sucedido
   const onLoginSuccess = useCallback((userData, token) => {

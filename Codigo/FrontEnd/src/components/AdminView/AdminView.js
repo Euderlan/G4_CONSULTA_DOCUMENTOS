@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import AdminRequestsPanel from '../AdminRequestsPanel/AdminRequestsPanel';
 import { 
   Shield, 
   LogOut, 
@@ -219,6 +220,11 @@ const AdminView = ({
 
       {/* Conteúdo principal da página */}
       <div className="admin-content">
+        {/* ✅ PAINEL DE SOLICITAÇÕES DE ADMIN - POSIÇÃO CORRETA */}
+        <div className="admin-section">
+          <AdminRequestsPanel API_BASE_URL="http://localhost:8000" />
+        </div>
+
         <div className="admin-section">
           {/* Cabeçalho da seção de documentos */}
           <div className="admin-section-header">
