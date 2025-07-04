@@ -1,4 +1,3 @@
-// components/AdminRequestButton/AdminRequestButton.js
 import React, { useState, useEffect } from 'react';
 import { Shield, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import './AdminRequestButton.css';

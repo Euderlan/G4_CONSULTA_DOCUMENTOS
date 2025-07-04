@@ -1,4 +1,3 @@
-// FrontEnd/src/components/LoginView/LoginView.js
 import React, { useState } from 'react';
 import { MessageSquare, User, } from 'lucide-react';
 import GoogleLoginButton from '../GoogleLoginButton/GoogleLoginButton';

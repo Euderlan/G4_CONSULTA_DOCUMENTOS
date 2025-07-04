@@ -35,7 +35,7 @@ const ChatView = ({
   reportError,
   setCurrentMessage,
   setSuggestions,
-  API_BASE_URL  // ✅ ADICIONADO - prop necessária para AdminRequestButton
+  API_BASE_URL  //  prop necessária para AdminRequestButton
 }) => {
   // Estado local para rastrear feedback dado pelo usuário em cada mensagem
   const [messageFeedback, setMessageFeedback] = useState({});
