@@ -12,7 +12,7 @@ from pypdf import PdfReader
 # Imports do sistema RAG
 from routes.utils import generate_embedding, get_pinecone_index
 
-# NOVA IMPORTAÇÃO: LangChain para chunking inteligente
+# LangChain para chunking inteligente
 try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     LANGCHAIN_AVAILABLE = True

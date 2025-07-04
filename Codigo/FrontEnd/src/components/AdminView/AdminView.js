@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AdminRequestsPanel from '../AdminRequestsPanel/AdminRequestsPanel';
+import AdminManagementPanel from '../AdminManagementPanel/AdminManagementPanel';
 import { 
   Shield, 
   LogOut, 
@@ -12,7 +13,8 @@ import {
   Plus,
   X,
   Save,
-  RefreshCw
+  RefreshCw,
+  Users
 } from 'lucide-react';
 import './AdminView.css';
 
@@ -40,6 +42,9 @@ const AdminView = ({
     file: null
   });
 
+  //  Estado para controlar seção ativa
+  const [activeSection, setActiveSection] = useState('documents'); // 'documents', 'requests', 'admin-management'
+
   // Função para buscar documentos do backend
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -66,8 +71,10 @@ const AdminView = ({
 
   // Effect para carregar documentos ao montar o componente
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    if (activeSection === 'documents') {
+      fetchDocuments();
+    }
+  }, [activeSection]);
 
   // Função para fazer upload real de arquivo para o backend
   const handleRealUpload = async (file) => {
@@ -181,6 +188,160 @@ const AdminView = ({
     );
   };
 
+  //Função para renderizar conteúdo baseado na seção ativa
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'requests':
+        return <AdminRequestsPanel API_BASE_URL="http://localhost:8000" />;
+      
+      case 'admin-management':
+        return <AdminManagementPanel API_BASE_URL="http://localhost:8000" currentUser={user} />;
+      
+      case 'documents':
+      default:
+        return (
+          <div className="admin-section">
+            {/* Cabeçalho da seção de documentos */}
+            <div className="admin-section-header">
+              <h2 className="admin-section-title">
+                <FileText className="admin-section-icon" />
+                Gerenciar Documentos
+                <div className="admin-badge">
+                  👤 Administrador: {user?.email}
+                </div>
+              </h2>
+              <button 
+                onClick={() => setShowAddModal(true)}
+                className="add-document-button"
+                disabled={isLoading}
+              >
+                <Plus size={16} />
+                Adicionar Documento
+              </button>
+            </div>
+            
+            {/* Área de conteúdo: loading ou lista de documentos */}
+            {isLoading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Carregando documentos...</p>
+              </div>
+            ) : (
+              <div className="admin-documents">
+                {/* Estado vazio quando não há documentos */}
+                {documents.length === 0 ? (
+                  <div className="empty-state">
+                    <FileText size={48} className="empty-icon" />
+                    <p>Nenhum documento encontrado</p>
+                  </div>
+                ) : (
+                  // Lista de documentos
+                  documents.map((doc) => (
+                    <div key={doc.id} className={`document-card ${!doc.isActive ? 'inactive' : ''}`}>
+                      {/* Informações do documento */}
+                      <div className="document-info">
+                        <div className="document-icon">
+                          <FileText size={24} />
+                        </div>
+                        <div className="document-details">
+                          {/* Modo de edição vs modo de visualização */}
+                          {editingDocument?.id === doc.id ? (
+                            <div className="edit-form">
+                              <input
+                                type="text"
+                                value={editingDocument.title}
+                                onChange={(e) => setEditingDocument({...editingDocument, title: e.target.value})}
+                                className="edit-input"
+                                placeholder="Título do documento"
+                              />
+                              <input
+                                type="text"
+                                value={editingDocument.version}
+                                onChange={(e) => setEditingDocument({...editingDocument, version: e.target.value})}
+                                className="edit-input"
+                                placeholder="Versão"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="document-title">{doc.title}</h3>
+                              <p className="document-version">Versão: {doc.version}</p>
+                            </>
+                          )}
+                          <p className="document-updated">Última atualização: {doc.lastUpdated}</p>
+                          <p className="document-size">Tamanho: {doc.size}</p>
+                          {/* Toggle de status ativo/inativo */}
+                          <div className="document-status">
+                            <button 
+                              onClick={() => toggleDocumentStatus(doc.id)}
+                              className={`status-toggle ${doc.isActive ? 'status-active' : 'status-inactive'}`}
+                            >
+                              <Eye className="status-icon" />
+                              <span className="status-text">
+                                {doc.isActive ? 'Ativo' : 'Inativo'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Ações do documento */}
+                      <div className="document-actions">
+                        {/* Botões para modo de edição */}
+                        {editingDocument?.id === doc.id ? (
+                          <>
+                            <button 
+                              onClick={handleSaveEdit}
+                              className="action-button save-button"
+                            >
+                              <Save className="action-icon" />
+                              Salvar
+                            </button>
+                            <button 
+                              onClick={handleCancelEdit}
+                              className="action-button cancel-button"
+                            >
+                              <X className="action-icon" />
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          // Botões para modo normal
+                          <>
+                            <button 
+                              onClick={() => handleEditDocument(doc.id)}
+                              className="action-button edit-button"
+                            >
+                              <Edit className="action-icon" />
+                              Editar
+                            </button>
+                            <button 
+                              onClick={() => handleDownloadDocument(doc)}
+                              className="action-button download-button"
+                            >
+                              <Download className="action-icon" />
+                              Baixar
+                            </button>
+                            <button 
+                              onClick={() => handleRemoveDocument(doc.id)}
+                              className="action-button remove-button"
+                            >
+                              <Trash2 className="action-icon" />
+                              Remover
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="admin-container">
       {/* Cabeçalho da página administrativa */}
@@ -199,6 +360,37 @@ const AdminView = ({
             </h1>
           </div>
           <div className="admin-header-right">
+            {/*Botões de navegação entre seções */}
+            <div className="section-nav">
+              <button
+                onClick={() => setActiveSection('documents')}
+                className={`nav-button ${activeSection === 'documents' ? 'active' : ''}`}
+                title="Gerenciar Documentos"
+              >
+                <FileText size={18} />
+                Documentos
+              </button>
+              <button
+                onClick={() => setActiveSection('requests')}
+                className={`nav-button ${activeSection === 'requests' ? 'active' : ''}`}
+                title="Solicitações de Admin"
+              >
+                <Shield size={18} />
+                Solicitações
+              </button>
+              {/*Botão para gerenciamento de admins (apenas super admin) */}
+              {user?.email === 'admin@ufma.br' && (
+                <button
+                  onClick={() => setActiveSection('admin-management')}
+                  className={`nav-button ${activeSection === 'admin-management' ? 'active' : ''}`}
+                  title="Gerenciar Administradores"
+                >
+                  <Users size={18} />
+                  Admins
+                </button>
+              )}
+            </div>
+            
             {/* Botão para atualizar lista de documentos */}
             <button
               onClick={fetchDocuments}
@@ -220,149 +412,8 @@ const AdminView = ({
 
       {/* Conteúdo principal da página */}
       <div className="admin-content">
-        {/* ✅ PAINEL DE SOLICITAÇÕES DE ADMIN - POSIÇÃO CORRETA */}
-        <div className="admin-section">
-          <AdminRequestsPanel API_BASE_URL="http://localhost:8000" />
-        </div>
-
-        <div className="admin-section">
-          {/* Cabeçalho da seção de documentos */}
-          <div className="admin-section-header">
-            <h2 className="admin-section-title">
-              <FileText className="admin-section-icon" />
-              Gerenciar Documentos
-              <div className="admin-badge">
-                👤 Administrador: {user?.email}
-              </div>
-            </h2>
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="add-document-button"
-              disabled={isLoading}
-            >
-              <Plus size={16} />
-              Adicionar Documento
-            </button>
-          </div>
-          
-          {/* Área de conteúdo: loading ou lista de documentos */}
-          {isLoading ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>Carregando documentos...</p>
-            </div>
-          ) : (
-            <div className="admin-documents">
-              {/* Estado vazio quando não há documentos */}
-              {documents.length === 0 ? (
-                <div className="empty-state">
-                  <FileText size={48} className="empty-icon" />
-                  <p>Nenhum documento encontrado</p>
-                </div>
-              ) : (
-                // Lista de documentos
-                documents.map((doc) => (
-                  <div key={doc.id} className={`document-card ${!doc.isActive ? 'inactive' : ''}`}>
-                    {/* Informações do documento */}
-                    <div className="document-info">
-                      <div className="document-icon">
-                        <FileText size={24} />
-                      </div>
-                      <div className="document-details">
-                        {/* Modo de edição vs modo de visualização */}
-                        {editingDocument?.id === doc.id ? (
-                          <div className="edit-form">
-                            <input
-                              type="text"
-                              value={editingDocument.title}
-                              onChange={(e) => setEditingDocument({...editingDocument, title: e.target.value})}
-                              className="edit-input"
-                              placeholder="Título do documento"
-                            />
-                            <input
-                              type="text"
-                              value={editingDocument.version}
-                              onChange={(e) => setEditingDocument({...editingDocument, version: e.target.value})}
-                              className="edit-input"
-                              placeholder="Versão"
-                            />
-                          </div>
-                        ) : (
-                          <>
-                            <h3 className="document-title">{doc.title}</h3>
-                            <p className="document-version">Versão: {doc.version}</p>
-                          </>
-                        )}
-                        <p className="document-updated">Última atualização: {doc.lastUpdated}</p>
-                        <p className="document-size">Tamanho: {doc.size}</p>
-                        {/* Toggle de status ativo/inativo */}
-                        <div className="document-status">
-                          <button 
-                            onClick={() => toggleDocumentStatus(doc.id)}
-                            className={`status-toggle ${doc.isActive ? 'status-active' : 'status-inactive'}`}
-                          >
-                            <Eye className="status-icon" />
-                            <span className="status-text">
-                              {doc.isActive ? 'Ativo' : 'Inativo'}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Ações do documento */}
-                    <div className="document-actions">
-                      {/* Botões para modo de edição */}
-                      {editingDocument?.id === doc.id ? (
-                        <>
-                          <button 
-                            onClick={handleSaveEdit}
-                            className="action-button save-button"
-                          >
-                            <Save className="action-icon" />
-                            Salvar
-                          </button>
-                          <button 
-                            onClick={handleCancelEdit}
-                            className="action-button cancel-button"
-                          >
-                            <X className="action-icon" />
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        // Botões para modo normal
-                        <>
-                          <button 
-                            onClick={() => handleEditDocument(doc.id)}
-                            className="action-button edit-button"
-                          >
-                            <Edit className="action-icon" />
-                            Editar
-                          </button>
-                          <button 
-                            onClick={() => handleDownloadDocument(doc)}
-                            className="action-button download-button"
-                          >
-                            <Download className="action-icon" />
-                            Baixar
-                          </button>
-                          <button 
-                            onClick={() => handleRemoveDocument(doc.id)}
-                            className="action-button remove-button"
-                          >
-                            <Trash2 className="action-icon" />
-                            Remover
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
+        {/*Renderiza conteúdo baseado na seção ativa */}
+        {renderSectionContent()}
       </div>
 
       {/* Modal para adicionar novo documento */}

@@ -1,4 +1,3 @@
-// FrontEnd/src/App.js
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import LoginView from './components/LoginView/LoginView';
 import ChatView from './components/ChatView/ChatView';

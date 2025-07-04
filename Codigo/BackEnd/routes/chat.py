@@ -1,4 +1,3 @@
-# routes/chat.py
 # Módulo responsável por gerenciar as interações de chat.
 # Este componente coordena a recuperação de informações de documentos e a geração de respostas
 # utilizando um modelo de linguagem grande (LLM) da Groq.
@@ -115,7 +114,7 @@ async def send_message(
             
             expanded_query = pinecone_index_instance.query(
                 vector=question_embedding,
-                top_k=25,  # Busca muito mais ampla
+                top_k=25,  
                 include_metadata=True 
             )
             
