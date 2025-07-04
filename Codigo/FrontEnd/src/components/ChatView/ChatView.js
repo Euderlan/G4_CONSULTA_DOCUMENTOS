@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import './ChatView.css';
+import AdminRequestButton from '../AdminRequestButton/AdminRequestButton';
 
 const ChatView = ({
   user,
@@ -33,7 +34,8 @@ const ChatView = ({
   copyToClipboard,
   reportError,
   setCurrentMessage,
-  setSuggestions
+  setSuggestions,
+  API_BASE_URL  // ✅ ADICIONADO - prop necessária para AdminRequestButton
 }) => {
   // Estado local para rastrear feedback dado pelo usuário em cada mensagem
   const [messageFeedback, setMessageFeedback] = useState({});
@@ -76,6 +78,14 @@ const ChatView = ({
             >
               <History size={20} />
             </button>
+
+            {/* Botão de solicitação de admin - apenas para usuários não-admin */}
+            {!user?.isAdmin && user?.email !== 'admin@ufma.br' && (
+              <AdminRequestButton 
+                user={user} 
+                API_BASE_URL={API_BASE_URL}
+              />
+            )}
 
             {/* Botão Admin - renderizado condicionalmente apenas para administradores */}
             {(user?.isAdmin || user?.email === 'admin@ufma.br') && (

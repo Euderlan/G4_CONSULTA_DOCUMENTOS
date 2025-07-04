@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import logging
+from routes import admin, chat, history, login, admin_requests
 import os
 
 load_dotenv()
@@ -32,6 +33,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(history.router, prefix="/api/history", tags=["History"])
 app.include_router(login.router, prefix="/api/login", tags=["Login"])
+app.include_router(admin_requests.router, prefix="/api/admin-requests", tags=["Admin Requests"])
 
 @app.get("/")
 async def health_check():
