@@ -378,6 +378,36 @@
   gap: 1rem;
 }
 
+/* ========== ESTILOS PARA DOCUMENTO SELECIONADO ========== */
+.selected-document-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.change-document-button {
+  background: none;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.change-document-button:hover {
+  background: #2563eb;
+  color: white;
+}
+
 .suggestions-container {
   position: relative;
   width: 100%;
@@ -601,6 +631,18 @@
     padding: 0.875rem 1rem;
     font-size: 0.875rem;
   }
+
+  /*  Responsive para documento selecionado */
+  .selected-document-indicator {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .change-document-button {
+    margin-left: 0;
+    align-self: flex-end;
+  }
 }
 
 @media (max-width: 480px) {
@@ -684,5 +726,16 @@
   /* Esconder badge admin em telas muito pequenas */
   .admin-badge {
     display: none;
+  }
+
+  /*  Mobile para documento selecionado */
+  .selected-document-indicator {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .change-document-button {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
   }
 }

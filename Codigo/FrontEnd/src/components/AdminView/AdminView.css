@@ -53,7 +53,7 @@
   gap: 15px;
 }
 
-/* ✅ NOVO: Navegação entre seções */
+/* Navegação entre seções */
 .section-nav {
   display: flex;
   gap: 8px;

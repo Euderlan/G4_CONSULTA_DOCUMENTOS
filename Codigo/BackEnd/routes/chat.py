@@ -33,6 +33,7 @@ router = APIRouter()
 # Utiliza Pydantic para validação automática da entrada.
 class ChatRequest(BaseModel):
     question: str # O único campo esperado na requisição é a pergunta do usuário.
+    selected_document: str = None  #Campo opcional para documento selecionado
 
 @router.post("")
 async def send_message(
@@ -51,7 +52,7 @@ async def send_message(
     6.  A conversa é automaticamente salva no histórico do usuário autenticado.
 
     Args:
-        request (ChatRequest): Objeto contendo a pergunta do usuário.
+        request (ChatRequest): Objeto contendo a pergunta do usuário e documento selecionado opcional.
         current_user (dict): Dados do usuário autenticado.
 
     Returns:
@@ -65,6 +66,7 @@ async def send_message(
     """
     try:
         question = request.question
+        selected_document = request.selected_document  
         
         if not question:
             raise HTTPException(status_code=400, detail='A pergunta do usuário não foi fornecida.')
@@ -79,14 +81,21 @@ async def send_message(
         if not pinecone_index_instance:
             raise HTTPException(status_code=500, detail="O índice Pinecone não foi inicializado ou está inacessível. O serviço de busca de documentos está inoperante.")
 
-        # Realiza a consulta de similaridade no Pinecone com busca muito expandida para máxima cobertura.
-        # top_k define o número de resultados mais semelhantes a serem retornados.
-        # include_metadata=True é fundamental para recuperar o conteúdo textual original dos chunks e seus metadados.
-        query_results = pinecone_index_instance.query(
-            vector=question_embedding,
-            top_k=15, # Configurado para buscar os 15 chunks mais relevantes para máxima cobertura.
-            include_metadata=True 
-        )
+        #  Busca com filtro opcional por documento
+        query_params = {
+            "vector": question_embedding,
+            "top_k": 15,
+            "include_metadata": True
+        }
+        
+        #  Aplica filtro se um documento específico foi selecionado
+        if selected_document and selected_document != "all":
+            query_params["filter"] = {"filename": selected_document}
+            logger.info(f"Busca filtrada para documento: {selected_document}")
+        else:
+            logger.info("Busca em todos os documentos")
+
+        query_results = pinecone_index_instance.query(**query_params)
 
         context_parts = [] # Lista para armazenar o conteúdo dos chunks recuperados.
         sources = []       # Lista para armazenar informações das fontes para o frontend.
@@ -109,14 +118,20 @@ async def send_message(
                 })
 
         # Sistema de fallback: se temos poucos resultados, busca mais agressivamente
-        if len(context_parts) < 5:
+        if len(context_parts) < 5 and (not selected_document or selected_document == "all"):
             logger.info("Poucos chunks encontrados, executando busca expandida")
             
-            expanded_query = pinecone_index_instance.query(
-                vector=question_embedding,
-                top_k=25,  
-                include_metadata=True 
-            )
+            expanded_query_params = {
+                "vector": question_embedding,
+                "top_k": 25,
+                "include_metadata": True
+            }
+            
+            # Aplica o mesmo filtro se necessário
+            if selected_document and selected_document != "all":
+                expanded_query_params["filter"] = {"filename": selected_document}
+            
+            expanded_query = pinecone_index_instance.query(**expanded_query_params)
             
             # Adiciona resultados adicionais sem threshold muito restritivo
             for match in expanded_query.matches[len(context_parts):]:
@@ -137,6 +152,7 @@ async def send_message(
 
         # Log detalhado para monitoramento e debug da qualidade da busca
         logger.info(f"Pergunta recebida: {question}")
+        logger.info(f"Documento selecionado: {selected_document or 'Todos'}")  
         logger.info(f"Chunks encontrados: {len(context_parts)}")
         logger.info(f"Tamanho do contexto gerado: {len(context)} caracteres")
         if query_results.matches:
@@ -146,9 +162,12 @@ async def send_message(
         # Etapa 3: Construção do prompt muito flexível e otimizado.
         # O prompt é formatado para instruir o LLM a ser maximamente útil
         # priorizando qualquer informação que possa ajudar o usuário.
+        document_context = f" do documento '{selected_document}'" if selected_document and selected_document != "all" else ""
+        
         prompt = f"""Você é um assistente especializado em documentos da UFMA (Universidade Federal do Maranhão).
 
 Pergunta do usuário: {question}
+{f"Contexto: Respondendo especificamente com base{document_context}" if document_context else ""}
 
 Contexto dos documentos:
 {context}
@@ -160,6 +179,7 @@ Instruções:
 - Se encontrar procedimentos similares ou regras gerais, mencione-os
 - Sempre tente ser útil, mesmo com informações incompletas
 - Cite especificamente quais documentos você está consultando
+{f"- Foque sua resposta nas informações{document_context}" if document_context else ""}
 
 Resposta detalhada:"""
         
@@ -201,11 +221,13 @@ Resposta detalhada:"""
             'answer': answer,
             'sources': sources,
             'context': context[:800] + "..." if len(context) > 800 else context, # Trecho maior do contexto para visualização.
+            'selected_document': selected_document,  #  Retorna documento selecionado
             'debug_info': {  # Informações de debug para monitoramento da qualidade
                 'chunks_found': len(context_parts),
                 'context_length': len(context),
                 'similarity_scores': [f"{s['score']:.3f}" for s in sources[:5]],
-                'total_results': len(query_results.matches)
+                'total_results': len(query_results.matches),
+                'document_filter': selected_document or 'all'  
             }
         }
         

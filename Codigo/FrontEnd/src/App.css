@@ -168,18 +168,15 @@ body {
   font-size: 1rem;
 }
 
+/* CORRIGIDO: Substituindo ring por box-shadow */
 .form-input:focus {
-  ring: 2px;
-  ring-color: #3b82f6;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .form-input-green:focus {
-  ring: 2px;
-  ring-color: #059669;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px #059669;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
 }
 
 .chat-input {
@@ -187,10 +184,8 @@ body {
 }
 
 .chat-input:focus {
-  ring: 2px;
-  ring-color: #3b82f6;
-  border-color: transparent;
-  box-shadow: 0 0 0 2px #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .chat-input:disabled {

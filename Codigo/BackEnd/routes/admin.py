@@ -18,6 +18,9 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
+#  Armazenamento em memória para metadados dos documentos
+documents_metadata = {}
+
 @router.get("/documents")
 async def list_documents():
     """Lista todos os documentos armazenados com metadados"""
@@ -35,12 +38,16 @@ async def list_documents():
                     if len(parts) > 2:
                         original_name = '_'.join(parts[2:])
                 
+                #  Pega o resumo dos metadados se disponível
+                summary = documents_metadata.get(filename, {}).get('summary', 'Resumo não disponível')
+                
                 documents.append({
                     "id": filename,
                     "original_name": original_name,
                     "size": stat.st_size,
                     "upload_date": datetime.fromtimestamp(stat.st_ctime).isoformat(),
-                    "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                    "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "summary": summary  #  Inclui o resumo na resposta
                 })
         
         return JSONResponse(content=documents)
@@ -67,7 +74,7 @@ async def upload_document(file: UploadFile = File(...)):
     try:
         # Gera nome único preservando a extensão 
         file_ext = Path(file.filename).suffix
-        file_id = f"{datetime.now().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}{file_ext}"
+        file_id = f"{datetime.now().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}_{file.filename}"
         file_path = os.path.join(UPLOAD_DIR, file_id)
         
         # Salva em stream com verificação de tamanho 
@@ -86,8 +93,16 @@ async def upload_document(file: UploadFile = File(...)):
         # PROCESSAMENTO AUTOMÁTICO
         logger.info(f"Iniciando processamento automático de {file.filename}")
         try:
-            processing_result = await process_and_index_pdf(file_path, file.filename)
+            processing_result = await process_and_index_pdf(file_path, file_id)
             logger.info(f"Processamento concluído: {processing_result}")
+            
+            #  Salva metadados incluindo resumo
+            documents_metadata[file_id] = {
+                'original_name': file.filename,
+                'summary': processing_result.get('summary', 'Resumo não disponível'),
+                'upload_date': datetime.now().isoformat(),
+                'file_size': file_size
+            }
             
             # Retorna metadados completos + resultado do processamento
             return {
@@ -96,7 +111,8 @@ async def upload_document(file: UploadFile = File(...)):
                 "size": file_size,
                 "upload_date": datetime.now().isoformat(),
                 "file_path": file_path,
-                "processing_result": processing_result,  # NOVO
+                "processing_result": processing_result,
+                "summary": processing_result.get('summary', 'Resumo não disponível'),  
                 "status": "success",
                 "message": f"Documento '{file.filename}' carregado e indexado com sucesso!"
             }
@@ -143,8 +159,8 @@ async def download_document(file_id: str):
             )
         
         # Obtém o nome original do arquivo se disponível
-        original_filename = file_id
-        if '_' in file_id:
+        original_filename = documents_metadata.get(file_id, {}).get('original_name', file_id)
+        if not original_filename and '_' in file_id:
             parts = file_id.split('_')
             if len(parts) > 2:
                 original_filename = '_'.join(parts[2:])
@@ -173,6 +189,11 @@ async def delete_document(file_id: str):
             )
             
         os.remove(file_path)
+        
+        # Remove metadados também
+        if file_id in documents_metadata:
+            del documents_metadata[file_id]
+            
         return {"success": True, "message": "Documento removido com sucesso"}
     except Exception as e:
         logger.error(f"Delete error: {str(e)}", exc_info=True)
