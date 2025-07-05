@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import './ChatView.css';
 import AdminRequestButton from '../AdminRequestButton/AdminRequestButton';
+import DocumentSelector from '../DocumentSelector/DocumentSelector'; 
 
 const ChatView = ({
   user,
@@ -39,6 +40,9 @@ const ChatView = ({
 }) => {
   // Estado local para rastrear feedback dado pelo usuário em cada mensagem
   const [messageFeedback, setMessageFeedback] = useState({});
+  
+  // Estado para documento selecionado
+  const [selectedDocument, setSelectedDocument] = useState('all');
 
   // Função wrapper para gerenciar feedback com estado visual local
   const handleFeedbackWithState = (messageId, feedbackType) => {
@@ -50,6 +54,94 @@ const ChatView = ({
     
     // Chamar função original de feedback passada como prop
     handleFeedback(messageId, feedbackType);
+  };
+
+  // Função personalizada para enviar mensagem com documento selecionado
+  const handleSendMessageWithDocument = async () => {
+    if (!currentMessage.trim() || isLoading) return;
+
+    const questionToSend = currentMessage;
+    setCurrentMessage('');
+    setSuggestions([]);
+
+    // Cria mensagem do usuário
+    const newUserMessage = {
+      id: chatMessages.length + 1,
+      text: questionToSend,
+      sender: 'user',
+      timestamp: new Date().toLocaleTimeString(),
+      sources: []
+    };
+
+    setChatMessages((prevMessages) => [...prevMessages, newUserMessage]);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          question: questionToSend,
+          selected_document: selectedDocument //Envia documento selecionado
+        }),
+      });
+
+      // Verifica se a sessão ainda é válida
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert('Sessão expirada ou não autorizada. Por favor, faça login novamente.');
+          handleLogout();
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta da API de chat:", data);
+
+      // Cria mensagem de resposta do bot
+      const botMessage = {
+        id: chatMessages.length + 2,
+        text: data.answer,
+        sender: 'bot',
+        timestamp: new Date().toLocaleTimeString(),
+        sources: data.sources?.map(source => ({
+          filename: source.filename || 'Documento',
+          content: source.conteudo || source.content,
+          score: source.score,
+          chunk_order: source.chunk_order,
+          start_char: source.start_char,
+          end_char: source.end_char
+        })) || []
+      };
+
+      setChatMessages((prevMessages) => [...prevMessages, botMessage]);
+
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      // Adiciona mensagem de erro ao chat
+      setChatMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: prevMessages.length + 2,
+          text: `Desculpe, não consegui obter uma resposta. Por favor, tente novamente. (Erro: ${error.message})`,
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString(),
+          isError: true,
+        },
+      ]);
+      reportError(`Erro ao enviar mensagem: ${error.message}`);
+    }
+  };
+
+  // Permite envio de mensagem com tecla Enter usando nova função
+  const handleKeyDownWithDocument = (event) => {
+    if (event.key === 'Enter' && !isLoading) {
+      handleSendMessageWithDocument();
+    }
   };
 
   return (
@@ -138,9 +230,20 @@ const ChatView = ({
             <div className="welcome-suggestions">
               <div className="welcome-message">
                 <h3>👋 Bem-vindo ao Sistema de Consultas UFMA!</h3>
-                <p>Faça perguntas sobre regulamentos e documentos da universidade. Aqui estão algumas sugestões para começar:</p>
+                <p>Faça perguntas sobre regulamentos e documentos da universidade. Primeiro, escolha em qual documento deseja buscar ou consulte todos:</p>
               </div>
+              
+              {/* Seletor de documentos */}
+              <DocumentSelector
+                selectedDocument={selectedDocument}
+                onDocumentSelect={setSelectedDocument}
+                API_BASE_URL={API_BASE_URL}
+              />
+              
               <div className="initial-suggestions">
+                <h4 style={{ margin: '1.5rem 0 1rem 0', textAlign: 'center', color: '#374151', fontSize: '1rem' }}>
+                  Sugestões para começar:
+                </h4>
                 {quickSuggestions.map((suggestion, index) => (
                   <button
                     key={index}
@@ -245,6 +348,21 @@ const ChatView = ({
 
       {/* Área de entrada de chat com sugestões e input */}
       <div className="chat-input-area">
+        {/* Indicador do documento selecionado */}
+        {selectedDocument && selectedDocument !== 'all' && (
+          <div className="selected-document-indicator">
+            <FileText size={14} />
+            <span>Consultando: {selectedDocument.replace('.pdf', '')}</span>
+            <button 
+              onClick={() => setSelectedDocument('all')}
+              className="change-document-button"
+              title="Voltar para todos os documentos"
+            >
+              Alterar
+            </button>
+          </div>
+        )}
+
         {/* Container de sugestões contextuais - mostrado quando há sugestões disponíveis */}
         {suggestions.length > 0 && (
           <div className="suggestions-container">
@@ -275,7 +393,7 @@ const ChatView = ({
               type="text"
               value={currentMessage}
               onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
+              onKeyDown={handleKeyDownWithDocument} // Usa nova função
               placeholder="Digite sua pergunta sobre os documentos da UFMA..."
               className="chat-input"
               disabled={isLoading}
@@ -284,7 +402,7 @@ const ChatView = ({
 
           {/* Botão de enviar mensagem */}
           <button
-            onClick={handleSendMessage}
+            onClick={handleSendMessageWithDocument} //  Usa nova função
             disabled={isLoading || !currentMessage.trim()}
             className="send-button"
           >
@@ -298,7 +416,12 @@ const ChatView = ({
 
         {/* Dica de uso para o usuário */}
         <div className="input-tip">
-          <span>Dica: Use perguntas específicas para obter melhores respostas</span>
+          <span>
+            {selectedDocument === 'all' 
+              ? 'Consultando todos os documentos disponíveis' 
+              : `Consultando: ${selectedDocument?.replace('.pdf', '') || 'documento selecionado'}`
+            }
+          </span>
         </div>
       </div>
     </div>

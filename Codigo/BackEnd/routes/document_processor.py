@@ -20,16 +20,22 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
     logging.warning("LangChain não disponível, usando chunking manual")
 
+# Import do Groq para gerar resumos
+from groq import Groq
+
 logger = logging.getLogger(__name__)
 
 class HybridDocumentProcessor:
-    """Processador HÍBRIDO: LangChain chunking + Sentence Transformers embeddings"""
+    """Processador HÍBRIDO: LangChain chunking + Sentence Transformers embeddings + Resumo com LLM"""
     
     def __init__(self):
         # Configurações muito otimizadas para máxima preservação do contexto
         self.chunk_size = 2500      # Tamanho ainda maior para manter muito mais contexto
         self.chunk_overlap = 600    # Overlap muito maior para excelente continuidade
         self.batch_size = 32        # Processamento em lotes grandes
+        
+        # Cliente Groq para resumos
+        self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         
     def extract_text_from_pdf(self, file_path: str) -> str:
         """Extração rápida de texto - baseada no open_file() otimizado"""
@@ -60,6 +66,43 @@ class HybridDocumentProcessor:
         except Exception as e:
             logger.error(f"Erro ao extrair texto: {e}")
             raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
+
+    def generate_document_summary(self, text: str, filename: str) -> str:
+        """Gera um resumo do documento usando Groq LLM"""
+        try:
+            # Pega apenas os primeiros 8000 caracteres para o resumo
+            text_for_summary = text[:8000] if len(text) > 8000 else text
+            
+            prompt = f"""Analise o seguinte documento da UFMA e crie um resumo conciso e informativo:
+
+DOCUMENTO: {filename}
+
+CONTEÚDO:
+{text_for_summary}
+
+Crie um resumo de 3-4 parágrafos que inclua:
+1. Tipo de documento e seu propósito principal
+2. Principais pontos, regras ou decisões abordadas
+3. Quem é afetado por este documento (estudantes, professores, etc.)
+4. Informações práticas importantes
+
+Mantenha o resumo claro, objetivo e útil para quem precisa consultar este documento."""
+
+            response = self.groq_client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.3
+            )
+            
+            summary = response.choices[0].message.content
+            logger.info(f"Resumo gerado para {filename}: {len(summary)} caracteres")
+            return summary
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar resumo: {e}")
+            # Retorna um resumo padrão em caso de erro
+            return f"Documento: {filename}\n\nResumo não disponível. Este documento contém {len(text)} caracteres de texto e está disponível para consulta."
     
     def create_smart_chunks(self, text: str, filename: str) -> List[Dict[str, Any]]:
         """Chunking INTELIGENTE usando LangChain para melhor qualidade de contexto"""
@@ -177,7 +220,7 @@ class HybridDocumentProcessor:
             logger.error(f"Erro ao gerar embeddings: {e}")
             raise HTTPException(status_code=500, detail=f"Erro nos embeddings: {str(e)}")
     
-    def optimized_pinecone_insert(self, chunks: List[Dict], embeddings: List[List[float]], filename: str) -> Dict[str, Any]:
+    def optimized_pinecone_insert(self, chunks: List[Dict], embeddings: List[List[float]], filename: str, summary: str) -> Dict[str, Any]:
         """Inserção otimizada no Pinecone com melhor controle de qualidade"""
         try:
             pinecone_index = get_pinecone_index()
@@ -199,7 +242,8 @@ class HybridDocumentProcessor:
                         "chunk_order": chunk["metadata"]["chunk_order"],
                         "char_count": chunk["metadata"]["char_count"],
                         "source": chunk["metadata"].get("source", "unknown"),
-                        "indexed_at": datetime.now().isoformat()
+                        "indexed_at": datetime.now().isoformat(),
+                        "summary": summary  # Inclui o resumo nos metadados
                     }
                 })
             
@@ -226,7 +270,8 @@ class HybridDocumentProcessor:
                 "vectors_inserted": total_inserted,
                 "chunking_method": "langchain" if LANGCHAIN_AVAILABLE else "manual",
                 "chunk_size": self.chunk_size,
-                "chunk_overlap": self.chunk_overlap
+                "chunk_overlap": self.chunk_overlap,
+                "summary": summary  #  Retorna o resumo
             }
                 
         except Exception as e:
@@ -234,7 +279,7 @@ class HybridDocumentProcessor:
             raise HTTPException(status_code=500, detail=f"Falha na indexação: {str(e)}")
     
     async def process_pdf_hybrid(self, file_path: str, filename: str) -> Dict[str, Any]:
-        """Pipeline HÍBRIDO completo: melhor qualidade com performance otimizada"""
+        """Pipeline HÍBRIDO completo: melhor qualidade com performance otimizada + Resumo"""
         start_time = datetime.now()
         
         try:
@@ -244,21 +289,25 @@ class HybridDocumentProcessor:
             logger.info("Extraindo texto...")
             text_content = self.extract_text_from_pdf(file_path)
             
-            # Etapa 2: Chunking inteligente com configurações melhoradas
+            # Etapa 2: Geração de resumo usando LLM
+            logger.info("Gerando resumo...")
+            summary = self.generate_document_summary(text_content, filename)
+            
+            # Etapa 3: Chunking inteligente com configurações melhoradas
             logger.info("Chunking inteligente...")
             chunks = self.create_smart_chunks(text_content, filename)
             
             if not chunks:
                 raise ValueError("Nenhum chunk válido criado")
             
-            # Etapa 3: Embeddings em lote otimizado
+            # Etapa 4: Embeddings em lote otimizado
             logger.info("Gerando embeddings...")
             contents = [chunk["content"] for chunk in chunks]
             embeddings = self.batch_generate_embeddings(contents)
             
-            # Etapa 4: Indexação otimizada
+            # Etapa 5: Indexação otimizada
             logger.info("Indexando...")
-            index_result = self.optimized_pinecone_insert(chunks, embeddings, filename)
+            index_result = self.optimized_pinecone_insert(chunks, embeddings, filename, summary)
             
             # Resultado final com métricas detalhadas
             processing_time = (datetime.now() - start_time).total_seconds()
@@ -285,5 +334,5 @@ hybrid_processor = HybridDocumentProcessor()
 
 # Função wrapper
 async def process_and_index_pdf(file_path: str, filename: str) -> Dict[str, Any]:
-    """Versão HÍBRIDA: melhor qualidade de contexto e performance"""
+    """Versão HÍBRIDA: melhor qualidade de contexto e performance + Resumo"""
     return await hybrid_processor.process_pdf_hybrid(file_path, filename)
