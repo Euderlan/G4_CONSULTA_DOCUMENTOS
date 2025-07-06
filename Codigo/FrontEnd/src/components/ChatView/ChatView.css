@@ -400,12 +400,27 @@
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: auto;
+  white-space: nowrap;
 }
 
 .change-document-button:hover {
   background: #2563eb;
   color: white;
+}
+
+/* Estilos específicos para o botão de remover */
+.change-document-button[style*="background-color: #6b7280"] {
+  background-color: #6b7280 !important;
+  border-color: #6b7280 !important;
+  color: white !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.change-document-button[style*="background-color: #6b7280"]:hover {
+  background-color: #4b5563 !important;
+  border-color: #4b5563 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-1px) !important;
 }
 
 .suggestions-container {
@@ -632,16 +647,23 @@
     font-size: 0.875rem;
   }
 
-  /*  Responsive para documento selecionado */
+  /* Responsive para documento selecionado */
   .selected-document-indicator {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
 
+  .selected-document-indicator > div {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .change-document-button {
-    margin-left: 0;
-    align-self: flex-end;
+    flex: 1;
+    text-align: center;
   }
 }
 
@@ -728,7 +750,7 @@
     display: none;
   }
 
-  /*  Mobile para documento selecionado */
+  /* Mobile para documento selecionado */
   .selected-document-indicator {
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;

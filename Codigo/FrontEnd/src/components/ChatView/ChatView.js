@@ -36,13 +36,16 @@ const ChatView = ({
   reportError,
   setCurrentMessage,
   setSuggestions,
-  API_BASE_URL  //  prop necessária para AdminRequestButton
+  API_BASE_URL
 }) => {
   // Estado local para rastrear feedback dado pelo usuário em cada mensagem
   const [messageFeedback, setMessageFeedback] = useState({});
   
   // Estado para documento selecionado
   const [selectedDocument, setSelectedDocument] = useState('all');
+  
+  // Estado para controlar se o seletor de documentos está visível
+  const [showDocumentSelector, setShowDocumentSelector] = useState(false);
 
   // Função wrapper para gerenciar feedback com estado visual local
   const handleFeedbackWithState = (messageId, feedbackType) => {
@@ -54,6 +57,22 @@ const ChatView = ({
     
     // Chamar função original de feedback passada como prop
     handleFeedback(messageId, feedbackType);
+  };
+
+  // Função para lidar com seleção de documento
+  const handleDocumentSelect = (docId) => {
+    setSelectedDocument(docId);
+    setShowDocumentSelector(false);
+  };
+
+  // Função para mostrar/esconder o seletor de documentos
+  const toggleDocumentSelector = () => {
+    setShowDocumentSelector(!showDocumentSelector);
+  };
+
+  // Função para alterar documento
+  const handleChangeDocument = () => {
+    setShowDocumentSelector(true);
   };
 
   // Função personalizada para enviar mensagem com documento selecionado
@@ -85,7 +104,7 @@ const ChatView = ({
         },
         body: JSON.stringify({ 
           question: questionToSend,
-          selected_document: selectedDocument //Envia documento selecionado
+          selected_document: selectedDocument
         }),
       });
 
@@ -122,7 +141,6 @@ const ChatView = ({
 
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      // Adiciona mensagem de erro ao chat
       setChatMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -236,7 +254,7 @@ const ChatView = ({
               {/* Seletor de documentos */}
               <DocumentSelector
                 selectedDocument={selectedDocument}
-                onDocumentSelect={setSelectedDocument}
+                onDocumentSelect={handleDocumentSelect}
                 API_BASE_URL={API_BASE_URL}
               />
               
@@ -348,17 +366,66 @@ const ChatView = ({
 
       {/* Área de entrada de chat com sugestões e input */}
       <div className="chat-input-area">
-        {/* Indicador do documento selecionado */}
-        {selectedDocument && selectedDocument !== 'all' && (
+        {/* Seletor de documentos expansível */}
+        {showDocumentSelector && (
+          <DocumentSelector
+            selectedDocument={selectedDocument}
+            onDocumentSelect={handleDocumentSelect}
+            API_BASE_URL={API_BASE_URL}
+          />
+        )}
+
+        {/* Indicador do documento selecionado com botões melhorados */}
+        {selectedDocument && selectedDocument !== 'all' ? (
           <div className="selected-document-indicator">
             <FileText size={14} />
             <span>Consultando: {selectedDocument.replace('.pdf', '')}</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                onClick={handleChangeDocument}
+                className="change-document-button"
+                title="Escolher outro documento"
+              >
+                Alterar
+              </button>
+              
+<button 
+  onClick={() => setSelectedDocument('all')} 
+  className="change-document-button" 
+  title="Voltar para todos os documentos" 
+  style={{ 
+    backgroundColor: '#6b7280', 
+    borderColor: '#6b7280', 
+    color: 'white',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+    transition: 'all 0.2s ease'
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+    e.target.style.transform = 'translateY(-1px)';
+    e.target.style.backgroundColor = '#4b5563';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.1)';
+    e.target.style.transform = 'translateY(0)';
+    e.target.style.backgroundColor = '#6b7280';
+  }}
+>
+  Remover
+</button>
+            </div>
+          </div>
+        ) : (
+          /* Botão para abrir seletor quando nenhum documento específico está selecionado */
+          <div className="selected-document-indicator">
+            <FileText size={14} />
+            <span>Consultando todos os documentos</span>
             <button 
-              onClick={() => setSelectedDocument('all')}
+              onClick={toggleDocumentSelector}
               className="change-document-button"
-              title="Voltar para todos os documentos"
+              title="Escolher documento específico"
             >
-              Alterar
+              Escolher Documento
             </button>
           </div>
         )}
@@ -393,7 +460,7 @@ const ChatView = ({
               type="text"
               value={currentMessage}
               onChange={handleInputChange}
-              onKeyDown={handleKeyDownWithDocument} // Usa nova função
+              onKeyDown={handleKeyDownWithDocument}
               placeholder="Digite sua pergunta sobre os documentos da UFMA..."
               className="chat-input"
               disabled={isLoading}
@@ -402,7 +469,7 @@ const ChatView = ({
 
           {/* Botão de enviar mensagem */}
           <button
-            onClick={handleSendMessageWithDocument} //  Usa nova função
+            onClick={handleSendMessageWithDocument}
             disabled={isLoading || !currentMessage.trim()}
             className="send-button"
           >
