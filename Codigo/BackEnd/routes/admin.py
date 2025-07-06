@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, status
 from fastapi.responses import FileResponse, JSONResponse
 import os
 import uuid
+import json
 from datetime import datetime
 from pathlib import Path
 import logging
@@ -15,11 +16,83 @@ router = APIRouter()
 
 # Configurações otimizadas
 UPLOAD_DIR = "uploads"
+METADATA_FILE = "document_metadata.json"  # Arquivo para persistir metadados
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
-#  Armazenamento em memória para metadados dos documentos
+# Armazenamento em memória para metadados dos documentos (carregado do arquivo)
 documents_metadata = {}
+
+def load_metadata():
+    """Carrega metadados do arquivo JSON"""
+    global documents_metadata
+    try:
+        if os.path.exists(METADATA_FILE):
+            with open(METADATA_FILE, 'r', encoding='utf-8') as f:
+                documents_metadata = json.load(f)
+            logger.info(f"Metadados carregados: {len(documents_metadata)} documentos")
+        else:
+            documents_metadata = {}
+            logger.info("Arquivo de metadados não encontrado, iniciando vazio")
+    except Exception as e:
+        logger.error(f"Erro ao carregar metadados: {e}")
+        documents_metadata = {}
+
+def save_metadata():
+    """Salva metadados no arquivo JSON"""
+    try:
+        with open(METADATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(documents_metadata, f, ensure_ascii=False, indent=2, default=str)
+        logger.info(f"Metadados salvos: {len(documents_metadata)} documentos")
+    except Exception as e:
+        logger.error(f"Erro ao salvar metadados: {e}")
+
+def sync_metadata_with_files():
+    """Sincroniza metadados com arquivos existentes no diretório"""
+    try:
+        existing_files = set()
+        for filename in os.listdir(UPLOAD_DIR):
+            if filename.endswith('.pdf'):
+                existing_files.add(filename)
+                
+                # Se arquivo existe mas não tem metadados, cria entrada básica
+                if filename not in documents_metadata:
+                    file_path = os.path.join(UPLOAD_DIR, filename)
+                    stat = os.stat(file_path)
+                    
+                    original_name = filename
+                    if '_' in filename:
+                        parts = filename.split('_')
+                        if len(parts) > 2:
+                            original_name = '_'.join(parts[2:])
+                    
+                    documents_metadata[filename] = {
+                        'original_name': original_name,
+                        'summary': 'Resumo não disponível - documento carregado antes da implementação de resumos',
+                        'upload_date': datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                        'file_size': stat.st_size
+                    }
+        
+        # Remove metadados de arquivos que não existem mais
+        files_to_remove = []
+        for filename in documents_metadata.keys():
+            if filename not in existing_files:
+                files_to_remove.append(filename)
+        
+        for filename in files_to_remove:
+            del documents_metadata[filename]
+            logger.info(f"Removido metadado órfão: {filename}")
+        
+        # Salva alterações
+        if files_to_remove or len(existing_files) != len(documents_metadata):
+            save_metadata()
+            
+    except Exception as e:
+        logger.error(f"Erro na sincronização de metadados: {e}")
+
+# Carrega metadados ao inicializar o módulo
+load_metadata()
+sync_metadata_with_files()
 
 @router.get("/documents")
 async def list_documents():
@@ -38,8 +111,9 @@ async def list_documents():
                     if len(parts) > 2:
                         original_name = '_'.join(parts[2:])
                 
-                #  Pega o resumo dos metadados se disponível
-                summary = documents_metadata.get(filename, {}).get('summary', 'Resumo não disponível')
+                # Pega o resumo dos metadados se disponível
+                metadata = documents_metadata.get(filename, {})
+                summary = metadata.get('summary', 'Resumo não disponível')
                 
                 documents.append({
                     "id": filename,
@@ -47,7 +121,7 @@ async def list_documents():
                     "size": stat.st_size,
                     "upload_date": datetime.fromtimestamp(stat.st_ctime).isoformat(),
                     "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    "summary": summary  #  Inclui o resumo na resposta
+                    "summary": summary
                 })
         
         return JSONResponse(content=documents)
@@ -96,13 +170,16 @@ async def upload_document(file: UploadFile = File(...)):
             processing_result = await process_and_index_pdf(file_path, file_id)
             logger.info(f"Processamento concluído: {processing_result}")
             
-            #  Salva metadados incluindo resumo
+            # Salva metadados incluindo resumo E persiste no arquivo
             documents_metadata[file_id] = {
                 'original_name': file.filename,
                 'summary': processing_result.get('summary', 'Resumo não disponível'),
                 'upload_date': datetime.now().isoformat(),
                 'file_size': file_size
             }
+            
+            # Persiste metadados no arquivo
+            save_metadata()
             
             # Retorna metadados completos + resultado do processamento
             return {
@@ -112,7 +189,7 @@ async def upload_document(file: UploadFile = File(...)):
                 "upload_date": datetime.now().isoformat(),
                 "file_path": file_path,
                 "processing_result": processing_result,
-                "summary": processing_result.get('summary', 'Resumo não disponível'),  
+                "summary": processing_result.get('summary', 'Resumo não disponível'),
                 "status": "success",
                 "message": f"Documento '{file.filename}' carregado e indexado com sucesso!"
             }
@@ -159,11 +236,15 @@ async def download_document(file_id: str):
             )
         
         # Obtém o nome original do arquivo se disponível
-        original_filename = documents_metadata.get(file_id, {}).get('original_name', file_id)
-        if not original_filename and '_' in file_id:
-            parts = file_id.split('_')
-            if len(parts) > 2:
-                original_filename = '_'.join(parts[2:])
+        metadata = documents_metadata.get(file_id, {})
+        original_filename = metadata.get('original_name', file_id)
+        
+        # Fallback para extração do nome se não estiver nos metadados
+        if not original_filename or original_filename == file_id:
+            if '_' in file_id:
+                parts = file_id.split('_')
+                if len(parts) > 2:
+                    original_filename = '_'.join(parts[2:])
         
         return FileResponse(
             path=file_path,
@@ -190,9 +271,10 @@ async def delete_document(file_id: str):
             
         os.remove(file_path)
         
-        # Remove metadados também
+        # Remove metadados também e persiste a alteração
         if file_id in documents_metadata:
             del documents_metadata[file_id]
+            save_metadata()
             
         return {"success": True, "message": "Documento removido com sucesso"}
     except Exception as e:
@@ -200,4 +282,21 @@ async def delete_document(file_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao remover documento"
+        )
+
+@router.get("/metadata/sync")
+async def sync_metadata():
+    """Endpoint para sincronizar metadados manualmente"""
+    try:
+        sync_metadata_with_files()
+        return {
+            "success": True, 
+            "message": "Metadados sincronizados com sucesso",
+            "total_documents": len(documents_metadata)
+        }
+    except Exception as e:
+        logger.error(f"Sync error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao sincronizar metadados"
         )

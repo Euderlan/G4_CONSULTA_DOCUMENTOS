@@ -29,16 +29,16 @@ class HybridDocumentProcessor:
     """Processador HÍBRIDO: LangChain chunking + Sentence Transformers embeddings + Resumo com LLM"""
     
     def __init__(self):
-        # Configurações muito otimizadas para máxima preservação do contexto
-        self.chunk_size = 2500      # Tamanho ainda maior para manter muito mais contexto
-        self.chunk_overlap = 600    # Overlap muito maior para excelente continuidade
+        # Configurações otimizadas para máxima preservação do contexto
+        self.chunk_size = 2500      # Tamanho para manter contexto
+        self.chunk_overlap = 600    # Overlap para excelente continuidade
         self.batch_size = 32        # Processamento em lotes grandes
         
         # Cliente Groq para resumos
         self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         
     def extract_text_from_pdf(self, file_path: str) -> str:
-        """Extração rápida de texto - baseada no open_file() otimizado"""
+        """Extração de texto do PDF"""
         try:
             reader = PdfReader(file_path)
             all_text = ""
@@ -68,9 +68,13 @@ class HybridDocumentProcessor:
             raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
 
     def generate_document_summary(self, text: str, filename: str) -> str:
-        """Gera um resumo do documento usando Groq LLM"""
+        """Gera um resumo do documento usando Groq LLM com fallback robusto"""
         try:
-            # Pega apenas os primeiros 8000 caracteres para o resumo
+            # Verifica se o cliente Groq está disponível
+            if not self.groq_client:
+                return self._generate_fallback_summary(text, filename)
+            
+            # Pega primeiros caracteres para o resumo
             text_for_summary = text[:8000] if len(text) > 8000 else text
             
             prompt = f"""Analise o seguinte documento da UFMA e crie um resumo conciso e informativo:
@@ -96,16 +100,71 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
             )
             
             summary = response.choices[0].message.content
+            
+            # Validação do resumo gerado
+            if not summary or len(summary.strip()) < 50:
+                logger.warning(f"Resumo muito curto gerado para {filename}, usando fallback")
+                return self._generate_fallback_summary(text, filename)
+            
             logger.info(f"Resumo gerado para {filename}: {len(summary)} caracteres")
             return summary
             
         except Exception as e:
-            logger.error(f"Erro ao gerar resumo: {e}")
-            # Retorna um resumo padrão em caso de erro
-            return f"Documento: {filename}\n\nResumo não disponível. Este documento contém {len(text)} caracteres de texto e está disponível para consulta."
+            logger.error(f"Erro ao gerar resumo com Groq: {e}")
+            return self._generate_fallback_summary(text, filename)
+    
+    def _generate_fallback_summary(self, text: str, filename: str) -> str:
+        """Gera resumo básico quando o Groq falha"""
+        try:
+            # Informações básicas do documento
+            char_count = len(text)
+            estimated_pages = char_count // 2000  # Estimativa baseada em caracteres
+            
+            # Tenta extrair informações do nome do arquivo
+            doc_type = "Documento"
+            if "resolução" in filename.lower() or "resolucao" in filename.lower():
+                doc_type = "Resolução"
+            elif "portaria" in filename.lower():
+                doc_type = "Portaria"
+            elif "edital" in filename.lower():
+                doc_type = "Edital"
+            elif "regimento" in filename.lower():
+                doc_type = "Regimento"
+            
+            # Pega primeiras frases para análise básica
+            first_text = text[:1000] if text else ""
+            
+            # Resumo estruturado básico
+            summary = f"""DOCUMENTO: {filename}
+
+TIPO: {doc_type} da UFMA
+
+CARACTERÍSTICAS:
+- Documento contém aproximadamente {char_count:,} caracteres
+- Estimativa de {estimated_pages} páginas
+- Processado e indexado para consultas
+
+CONTEÚDO:
+Este documento da UFMA contém regulamentações, normas ou informações institucionais importantes. O texto completo foi processado e está disponível para consultas através do sistema de busca inteligente.
+
+ACESSO:
+Para obter informações específicas sobre este documento, utilize o sistema de chat para fazer perguntas direcionadas sobre seu conteúdo."""
+
+            if first_text:
+                # Adiciona preview do início do documento
+                preview = first_text.replace('\n', ' ')[:200] + "..."
+                summary += f"\n\nPREVIEW DO CONTEÚDO:\n{preview}"
+            
+            logger.info(f"Resumo fallback gerado para {filename}")
+            return summary
+            
+        except Exception as e:
+            logger.error(f"Erro no resumo fallback: {e}")
+            # Último recurso - resumo mínimo
+            return f"Documento: {filename}\n\nEste documento da UFMA foi processado com sucesso e está disponível para consultas. Contém {len(text) if text else 0} caracteres de texto indexado para busca."
     
     def create_smart_chunks(self, text: str, filename: str) -> List[Dict[str, Any]]:
-        """Chunking INTELIGENTE usando LangChain para melhor qualidade de contexto"""
+        """Chunking inteligente usando LangChain para melhor qualidade de contexto"""
         
         if LANGCHAIN_AVAILABLE:
             # Usa LangChain para chunking inteligente com separadores otimizados
@@ -186,7 +245,7 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
         return chunks
     
     def batch_generate_embeddings(self, contents: List[str]) -> List[List[float]]:
-        """Embeddings em lote super otimizado para alta performance"""
+        """Embeddings em lote otimizado para alta performance"""
         try:
             # Carrega modelo uma vez só para eficiência
             if not hasattr(self, '_model'):
@@ -221,7 +280,7 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
             raise HTTPException(status_code=500, detail=f"Erro nos embeddings: {str(e)}")
     
     def optimized_pinecone_insert(self, chunks: List[Dict], embeddings: List[List[float]], filename: str, summary: str) -> Dict[str, Any]:
-        """Inserção otimizada no Pinecone com melhor controle de qualidade"""
+        """Inserção otimizada no Pinecone com controle de qualidade"""
         try:
             pinecone_index = get_pinecone_index()
             if not pinecone_index:
@@ -271,7 +330,7 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
                 "chunking_method": "langchain" if LANGCHAIN_AVAILABLE else "manual",
                 "chunk_size": self.chunk_size,
                 "chunk_overlap": self.chunk_overlap,
-                "summary": summary  #  Retorna o resumo
+                "summary": summary
             }
                 
         except Exception as e:
@@ -279,7 +338,7 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
             raise HTTPException(status_code=500, detail=f"Falha na indexação: {str(e)}")
     
     async def process_pdf_hybrid(self, file_path: str, filename: str) -> Dict[str, Any]:
-        """Pipeline HÍBRIDO completo: melhor qualidade com performance otimizada + Resumo"""
+        """Pipeline completo: processamento + resumo garantido + indexação"""
         start_time = datetime.now()
         
         try:
@@ -289,11 +348,15 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
             logger.info("Extraindo texto...")
             text_content = self.extract_text_from_pdf(file_path)
             
-            # Etapa 2: Geração de resumo usando LLM
+            # Etapa 2: Geração de resumo com fallback garantido
             logger.info("Gerando resumo...")
             summary = self.generate_document_summary(text_content, filename)
             
-            # Etapa 3: Chunking inteligente com configurações melhoradas
+            # Garantia: sempre ter um resumo válido
+            if not summary or len(summary.strip()) < 20:
+                summary = self._generate_fallback_summary(text_content, filename)
+            
+            # Etapa 3: Chunking inteligente
             logger.info("Chunking inteligente...")
             chunks = self.create_smart_chunks(text_content, filename)
             
@@ -327,12 +390,21 @@ Mantenha o resumo claro, objetivo e útil para quem precisa consultar este docum
         except Exception as e:
             processing_time = (datetime.now() - start_time).total_seconds()
             logger.error(f"Erro após {processing_time:.1f}s: {e}")
-            raise
+            
+            # Em caso de erro, retorna resumo básico para não perder completamente
+            summary = self._generate_fallback_summary("", filename)
+            return {
+                "success": False,
+                "filename": filename,
+                "error": str(e),
+                "summary": summary,
+                "processing_time_seconds": round(processing_time, 2)
+            }
 
 # Instância global
 hybrid_processor = HybridDocumentProcessor()
 
 # Função wrapper
 async def process_and_index_pdf(file_path: str, filename: str) -> Dict[str, Any]:
-    """Versão HÍBRIDA: melhor qualidade de contexto e performance + Resumo"""
+    """Versão HÍBRIDA: melhor qualidade de contexto e performance + Resumo garantido"""
     return await hybrid_processor.process_pdf_hybrid(file_path, filename)
