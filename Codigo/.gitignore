@@ -1,15 +1,28 @@
-echo "# Python
+# Dependências
+node_modules/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 venv/
 env/
-ENV/
 
-# Node
-node_modules/
+# Arquivos de configuração sensíveis
+.env
+*.env.local
+*.env.production
+
+# Logs
+*.log
+logs/
+
+# Uploads de documentos (arquivos grandes)
+uploads/*.pdf
+
+# Mantém a estrutura da pasta uploads
+!uploads/.gitkeep
+
+# Arquivo de metadados (MANTÉM para persistir resumos)
+!document_metadata.json
 
 # IDEs
 .vscode/
@@ -17,6 +30,11 @@ node_modules/
 *.swp
 *.swo
 
-# OS
+# Sistema operacional
 .DS_Store
-Thumbs.db" > .gitignore
+Thumbs.db
+
+# Build e cache
+dist/
+build/
+*.egg-info/
