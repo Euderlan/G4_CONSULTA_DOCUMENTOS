@@ -114,12 +114,16 @@
 
 .tab-buttons {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  
 }
 
 .tab-button {
   flex: 1;
+  width: 10rem;
+  height: 2.5rem;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -130,14 +134,14 @@
 }
 
 .active-tab-blue {
-  background-color: #2563eb;
-  color: white;
+  background-color: #2563eb !important;
+  color: white !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .active-tab-green {
-  background-color: #059669;
-  color: white;
+  background-color: #059669 !important;
+  color: white !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -183,8 +187,8 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 .register-button{
-  width: 380px;
-  height: 40px;
+
+  height: 2.5rem;
 }
 
 .info-box {
@@ -239,4 +243,5 @@
     padding: 1.5rem;
     margin: 1rem;
   }
+  
 }
