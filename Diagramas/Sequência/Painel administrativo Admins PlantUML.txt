@@ -1,0 +1,93 @@
+@startuml
+actor "Super Admin" as SA
+participant Sistema
+participant "Base de Dados" as BD
+
+SA -> Sistema: acessa menu superior do painel administrativo
+SA -> Sistema: clica em "Admins"
+Sistema -> Sistema: verifica se usuário é Super Admin
+Sistema -> SA: exibe aba "Admins" com 3 botões disponíveis
+
+alt Botão Administradores
+    SA -> Sistema: clica em "Administradores"
+    Sistema -> BD: busca lista de administradores
+    BD -> Sistema: retorna dados dos administradores
+    Sistema -> SA: exibe lista de administradores
+    note right
+    • Informações Exibidas:
+      - Nome e email
+      - Status (Ativo/Suspenso)
+      - Tipo (Super Admin/Admin Regular)
+      - Data de última promoção
+      - Quem promoveu o usuário
+    end note
+    
+    alt Suspender Admin
+        SA -> Sistema: seleciona admin para suspender
+        Sistema -> SA: solicita justificativa obrigatória
+        SA -> Sistema: digita justificativa para suspensão
+        SA -> Sistema: confirma suspensão
+        Sistema -> BD: atualiza status do admin para suspenso
+        Sistema -> BD: registra ação no log de atividades
+        BD -> Sistema: confirma alterações
+        Sistema -> SA: notifica suspensão realizada
+        
+    else Reativar Admin
+        SA -> Sistema: seleciona admin suspenso
+        SA -> Sistema: clica em "Reativar"
+        Sistema -> BD: atualiza status do admin para ativo
+        Sistema -> BD: registra ação no log de atividades
+        BD -> Sistema: confirma alterações
+        Sistema -> SA: notifica reativação realizada
+        
+    else Remover Admin
+        SA -> Sistema: seleciona admin para remoção
+        Sistema -> SA: solicita justificativa obrigatória
+        SA -> Sistema: digita justificativa para remoção
+        SA -> Sistema: confirma remoção definitiva
+        Sistema -> BD: remove privilégios permanentemente
+        Sistema -> BD: registra ação no log de atividades
+        BD -> Sistema: confirma alterações
+        Sistema -> SA: notifica remoção realizada
+    end
+
+else Botão Promover Usuários
+    SA -> Sistema: clica em "Promover Usuários"
+    Sistema -> SA: abre aba "Promover Usuário"
+    Sistema -> BD: busca lista de usuários elegíveis (não-admin)
+    BD -> Sistema: retorna usuários disponíveis
+    Sistema -> SA: exibe lista de usuários elegíveis
+    SA -> Sistema: seleciona usuário para promoção
+    Sistema -> SA: exibe informações do candidato:
+    note right
+    • Nome e email
+    • Data de cadastro
+    end note
+    SA -> Sistema: clica em "Promover a Admin"
+    Sistema -> SA: solicita justificativa obrigatória
+    SA -> Sistema: digita justificativa
+    SA -> Sistema: confirma a promoção
+    Sistema -> BD: atualiza privilégios do usuário
+    Sistema -> BD: registra promoção no histórico
+    BD -> Sistema: confirma alterações
+    Sistema -> SA: confirma promoção
+
+else Botão Log de Atividades
+    SA -> Sistema: clica em "Log de Atividades"
+    Sistema -> BD: busca histórico completo de ações administrativas
+    BD -> Sistema: retorna log detalhado
+    Sistema -> SA: exibe log de atividades:
+    note right
+    • Histórico Completo de todas as ações administrativas:
+      - Promoções de usuários
+      - Suspensões e reativações
+      - Remoções de privilégios
+    • Detalhes de Cada Ação:
+      - Descrição da ação
+      - Data/hora
+      - Administrador responsável
+      - Justificativa (quando aplicável)
+    end note
+end
+
+@enduml

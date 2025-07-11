@@ -1,0 +1,23 @@
+@startuml
+actor Usuário
+participant Sistema
+participant Admin
+
+Usuário -> Sistema: acessa menu superior
+Usuário -> Sistema: clica em "Solicitar Admin"
+Sistema -> Usuário: abre aba de justificativa
+Usuário -> Sistema: digita justificativa do pedido
+Usuário -> Sistema: clica em "Enviar Solicitação"
+Sistema -> Admin: envia solicitação de admin com justificativa
+Sistema -> Usuário: exibe "Solicitação enviada"
+
+alt Aprovação da Solicitação
+    Admin -> Sistema: aprova solicitação
+    Sistema -> Sistema: atualiza permissões do usuário
+    Sistema -> Usuário: notifica aprovação
+else Rejeição da Solicitação
+    Admin -> Sistema: rejeita solicitação
+    Sistema -> Usuário: notifica rejeição
+end
+
+@enduml
