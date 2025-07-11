@@ -3,16 +3,42 @@ actor Usuário
 participant Sistema
 participant LLM
 
+Usuário -> Sistema: acessa aba de pergunta
+Sistema -> Usuário: exibe opções de seleção de documento
+alt Seleção de Documento
+    Usuário -> Sistema: seleciona documento específico
+else Usar Todos os Documentos
+    Usuário -> Sistema: seleciona " todos os documentos"
+end
+
 Usuário -> Sistema: acessa campo de pergunta
 Usuário -> Sistema: digita dúvida sobre resolução
 Usuário -> Sistema: clica em "Enviar"
 
 alt Processamento de Pergunta
     Sistema -> Sistema: processa pergunta
-    Sistema -> Sistema: busca contexto relevante
+    alt Documento Específico Selecionado
+        Sistema -> Sistema: busca contexto relevante no documento selecionado
+    else Todos os Documentos
+        Sistema -> Sistema: busca contexto relevante em todos os documentos
+    end
     Sistema -> LLM: envia pergunta e contexto
     LLM -> Sistema: retorna resposta baseada na resolução
     Sistema -> Usuário: exibe resposta ao usuário
     Sistema -> Sistema: salva pergunta e resposta no histórico
 end
+
+opt Alteração de Documento (após pergunta inicial)
+    Usuário -> Sistema: seleciona alterar documento de pesquisa
+    Sistema -> Usuário: exibe opções de seleção de documento
+    alt Nova Seleção de Documento
+        Usuário -> Sistema: seleciona novo documento específico
+    else Usar Todos os Documentos
+        Usuário -> Sistema: seleciona "usar todos os documentos"
+    end
+    note right: Usuário pode continuar fazendo perguntas no mesmo documento
+     Sistema -> Sistema: salva pergunta e resposta no histórico
+
+    end
+
 @enduml

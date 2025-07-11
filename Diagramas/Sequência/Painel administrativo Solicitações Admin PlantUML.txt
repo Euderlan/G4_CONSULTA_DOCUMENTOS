@@ -1,0 +1,46 @@
+@startuml
+actor Admin
+participant Sistema
+participant "Base de Dados" as BD
+
+Admin -> Sistema: acessa menu superior do painel administrativo
+Admin -> Sistema: clica em "Solicitações"
+Sistema -> BD: busca solicitações pendentes
+BD -> Sistema: retorna lista de solicitações
+Sistema -> Usuário: exibe aba de solicitações com:
+note right
+• Visualização em Tempo Real
+• Informações Completas:
+  - Nome e email do solicitante
+  - Data/hora da solicitação
+  - Justificativa detalhada
+• Contador de solicitações pendentes
+end note
+
+Admin -> Sistema: seleciona solicitação para análise
+Sistema -> Usuário: exibe detalhes da solicitação selecionada
+
+alt Processo de Análise
+    Admin -> Admin: lê a justificativa do usuário
+    Admin -> Admin: avalia a necessidade dos privilégios
+    
+    alt Aprovação
+        Admin -> Sistema: clica em "Aprovar"
+        Sistema -> BD: atualiza status da solicitação
+        Sistema -> BD: promove usuário a admin
+        BD -> Sistema: confirma alterações
+        Sistema -> Admin: notifica aprovação realizada
+        Sistema -> Sistema: notifica usuário automaticamente
+    else Rejeição
+        Admin -> Sistema: clica em "Negar"
+        Sistema -> BD: atualiza status da solicitação
+        BD -> Sistema: confirma alteração
+        Sistema -> Admin: notifica rejeição realizada
+        Sistema -> Sistema: notifica usuário automaticamente
+    end
+end
+
+Sistema -> Sistema: atualiza contador de solicitações pendentes
+Sistema -> Admin: atualiza visualização em tempo real
+
+@enduml
