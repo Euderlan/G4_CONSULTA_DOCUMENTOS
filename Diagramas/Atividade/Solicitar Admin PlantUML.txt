@@ -1,0 +1,35 @@
+Solicitar Admin PlantUML
+@startuml
+|Usuário|
+start
+
+:acessa menu superior;
+:clica em "Solicitar Admin";
+
+|Sistema|
+:abre aba de justificativa;
+
+|Usuário|
+:digita justificativa do pedido;
+:clica em "Enviar Solicitação";
+
+|Sistema|
+:envia solicitação de admin com justificativa;
+:exibe "Solicitação enviada";
+
+|Admin|
+if ("Aprova solicitação?") then (Sim)
+  :aprova solicitação;
+
+  |Sistema|
+  :atualiza permissões do usuário;
+  :notifica aprovação ao usuário;
+else
+  :rejeita solicitação;
+
+  |Sistema|
+  :notifica rejeição ao usuário;
+endif
+
+stop
+@enduml

@@ -1,17 +1,61 @@
-
-
+Fazer Pergunta PlantUML
 @startuml
-title Processo de Fazer Pergunta - Sistema UFMA
+|Usuário|
 start
-:Usuário acessa campo de pergunta;
-:Digita dúvida sobre resolução;
-:Clica em "Enviar";
-:Sistema consulta base vetorial
-:Sistema processa pergunta;
-:Sistema busca contexto relevante;
-:Envia pergunta e contexto ao LLM;
-:LLM retorna resposta baseada na resolução;
-:Sistema exibe resposta ao usuário;
-:Pergunta e resposta são salvas no histórico;
+
+:acessa aba de pergunta;
+|Sistema|
+:exibe opções de seleção de documento;
+|Usuário|
+
+if ("Seleciona documento específico?") then (Sim)
+  :seleciona documento específico;
+else
+  :seleciona "todos os documentos";
+endif
+
+:acessa campo de pergunta;
+:digita dúvida sobre resolução;
+:clica em "Enviar";
+
+|Sistema|
+:processa pergunta;
+
+if ("Documento específico foi selecionado?") then (Sim)
+  :busca contexto relevante\nno documento selecionado;
+else
+  :busca contexto relevante\nem todos os documentos;
+endif
+
+|LLM|
+:recebe pergunta e contexto;
+:retorna resposta baseada na resolução;
+
+|Sistema|
+:exibe resposta ao usuário;
+:salva pergunta e resposta no histórico;
+
+if ("Deseja alterar documento?") then (Sim)
+  |Usuário|
+  :seleciona alterar documento de pesquisa;
+  |Sistema|
+  :exibe opções de seleção de documento;
+
+  if ("Seleciona novo documento?") then (Sim)
+    |Usuário|
+    :seleciona novo documento específico;
+  else
+    |Usuário|
+    :seleciona "usar todos os documentos";
+  endif
+
+  |Sistema|
+  :salva pergunta e resposta no histórico;
+  note right
+    Usuário pode continuar
+    fazendo perguntas no mesmo documento
+  end note
+endif
+
 stop
 @enduml
