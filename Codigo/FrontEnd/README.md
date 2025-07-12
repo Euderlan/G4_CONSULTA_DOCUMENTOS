@@ -43,20 +43,27 @@ A aplicação será aberta automaticamente em: **http://localhost:3000**
 FrontEnd/
 ├── public/
 │   ├── index.html          # HTML principal
-│   └── manifest.json       # Configurações PWA
+│   ├── manifest.json       # Configurações PWA
+│   └── robots.txt          # Configurações para crawlers
 ├── src/
 │   ├── components/         # Componentes React
 │   │   ├── LoginView/      # Tela de login
 │   │   ├── ChatView/       # Interface principal de chat
 │   │   ├── HistoryView/    # Histórico de conversas
 │   │   ├── AdminView/      # Painel administrativo
-│   │   └── GoogleLoginButton/ # Botão de login Google
+│   │   ├── DocumentSelector/ # Seletor de documentos
+│   │   ├── GoogleLoginButton/ # Botão de login Google
+│   │   ├── AdminRequestButton/ # Botão solicitação admin
+│   │   ├── AdminRequestsPanel/ # Painel de solicitações
+│   │   └── AdminManagementPanel/ # Gestão de administradores
 │   ├── App.js             # Componente principal
 │   ├── App.css            # Estilos globais
 │   ├── index.js           # Ponto de entrada
-│   └── index.css          # Estilos base
+│   ├── index.css          # Estilos base
+│   └── reportWebVitals.js # Métricas de performance
 ├── package.json           # Dependências e scripts
-├── .env                   # Variáveis de ambiente (não commitado)
+├── .env                   # Variáveis de ambiente
+├── .gitignore            # Arquivos ignorados pelo Git
 └── README.md             # Este arquivo
 ```
 
@@ -72,10 +79,12 @@ FrontEnd/
 
 2. **ChatView** - Interface Principal
    - Chat inteligente com IA
+   - Seletor de documentos específicos
    - Sugestões de perguntas
    - Exibição de fontes consultadas
    - Sistema de feedback (👍/👎)
    - Histórico de conversa na sessão
+   - Interface responsiva para mobile
 
 3. **HistoryView** - Histórico
    - Visualização de conversas anteriores
@@ -87,6 +96,17 @@ FrontEnd/
    - Gerenciamento de documentos
    - Download de arquivos
    - Controle de acesso restrito
+   - Navegação entre seções
+5. AdminRequestsPanel - Gestão de Solicitações
+   - Visualização de pedidos de admin
+   - Aprovação/negação de solicitações
+   - Interface de revisão streamlined
+6. AdminManagementPanel - Gestão de Administradores
+   - Promoção de usuários a admin
+   - Suspensão/reativação de admins
+   - Remoção de privilégios
+   - Log de atividades administrativas
+   - Acesso restrito ao super admin
 
 ## 🎯 Usuários de Teste
 
