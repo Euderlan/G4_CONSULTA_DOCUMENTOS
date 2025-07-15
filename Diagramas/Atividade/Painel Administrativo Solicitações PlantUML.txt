@@ -1,0 +1,43 @@
+Atividade - Painel Administrativo Solicitações PLantUML
+@startuml
+|Admin|
+start
+
+:acessa menu superior do painel administrativo;
+:clica em "Solicitações";
+
+|Sistema|
+:busca solicitações pendentes;
+:retorna lista de solicitações;
+
+|Admin|
+:seleciona uma solicitação para análise;
+
+|Sistema|
+:exibe detalhes da solicitação selecionada;
+
+|Admin|
+:lê a justificativa do usuário;
+:avalia a necessidade dos privilégios;
+
+if ("Solicitação será aprovada?") then (Sim)
+  :clica em "Aprovar";
+
+  |Sistema|
+  :atualiza status da solicitação;
+  :promove usuário a admin;
+  :notifica aprovação ao admin;
+  :notifica usuário automaticamente;
+else
+  :clica em "Negar";
+
+  |Sistema|
+  :atualiza status da solicitação;
+  :notifica rejeição ao admin;
+  :notifica usuário automaticamente;
+endif
+
+:atualiza contador de solicitações pendentes;
+
+stop
+@enduml

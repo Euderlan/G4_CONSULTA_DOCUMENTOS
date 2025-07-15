@@ -1,0 +1,82 @@
+Atividade - Painel Administrativo Admins PlantUML
+@startuml
+start
+
+:Super Admin acessa o menu superior;
+:Super Admin clica em "Admins";
+
+if (É Super Admin?) then (Sim)
+  :Exibe aba "Admins" com 3 botões;
+
+  partition EscolhaDeAba {
+    if ("Administradores" clicado?) then (Sim)
+      :Busca lista de administradores;
+      :Exibe lista de administradores;
+      note right
+        • Nome e email
+        • Status (Ativo/Suspenso)
+        • Tipo (Super Admin/Admin Regular)
+        • Data de última promoção
+        • Quem promoveu o usuário
+      end note
+
+      if (Suspender admin?) then (Sim)
+        :Seleciona admin;
+        :Solicita justificativa;
+        :Digita justificativa;
+        :Confirma suspensão;
+        :Atualiza status para "suspenso";
+        :Registra no log;
+        :Notifica suspensão realizada;
+
+      else if (Reativar admin?) then (Sim)
+        :Seleciona admin suspenso;
+        :Clica em "Reativar";
+        :Atualiza status para "ativo";
+        :Registra no log;
+        :Notifica reativação realizada;
+
+      else if (Remover admin?) then (Sim)
+        :Seleciona admin;
+        :Solicita justificativa;
+        :Digita justificativa;
+        :Confirma remoção;
+        :Remove privilégios permanentemente;
+        :Registra no log;
+        :Notifica remoção realizada;
+      endif
+
+    else if ("Promover Usuários" clicado?) then (Sim)
+      :Abre aba "Promover Usuário";
+      :Busca lista de usuários elegíveis;
+      :Exibe lista de usuários;
+      :Seleciona usuário;
+      :Exibe dados do candidato;
+      note right
+        • Nome e email
+        • Data de cadastro
+      end note
+      :Clica em "Promover a Admin";
+      :Solicita justificativa;
+      :Digita justificativa;
+      :Confirma promoção;
+      :Atualiza privilégios;
+      :Registra promoção;
+      :Notifica promoção realizada;
+
+    else if ("Log de Atividades" clicado?) then (Sim)
+      :Busca histórico de ações administrativas;
+      :Exibe log de atividades;
+      note right
+        • Promoções, suspensões, remoções
+        • Data/hora
+        • Admin responsável
+        • Justificativa (quando aplicável)
+      end note
+    endif
+  }
+
+endif
+
+stop
+@enduml
