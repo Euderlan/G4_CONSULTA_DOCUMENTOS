@@ -1,12 +1,8 @@
-Fazer Pergunta PlantUML
 @startuml
-|Usuário|
 start
 
 :acessa aba de pergunta;
-|Sistema|
 :exibe opções de seleção de documento;
-|Usuário|
 
 if ("Seleciona documento específico?") then (Sim)
   :seleciona documento específico;
@@ -18,7 +14,6 @@ endif
 :digita dúvida sobre resolução;
 :clica em "Enviar";
 
-|Sistema|
 :processa pergunta;
 
 if ("Documento específico foi selecionado?") then (Sim)
@@ -27,29 +22,20 @@ else
   :busca contexto relevante\nem todos os documentos;
 endif
 
-|LLM|
-:recebe pergunta e contexto;
-:retorna resposta baseada na resolução;
-
-|Sistema|
+:gera resposta baseada no contexto e na dúvida;
 :exibe resposta ao usuário;
 :salva pergunta e resposta no histórico;
 
 if ("Deseja alterar documento?") then (Sim)
-  |Usuário|
   :seleciona alterar documento de pesquisa;
-  |Sistema|
   :exibe opções de seleção de documento;
 
   if ("Seleciona novo documento?") then (Sim)
-    |Usuário|
     :seleciona novo documento específico;
   else
-    |Usuário|
     :seleciona "usar todos os documentos";
   endif
 
-  |Sistema|
   :salva pergunta e resposta no histórico;
   note right
     Usuário pode continuar
