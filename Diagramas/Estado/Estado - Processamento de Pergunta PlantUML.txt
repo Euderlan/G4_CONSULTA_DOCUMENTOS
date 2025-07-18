@@ -1,29 +1,30 @@
-
+Estado - Processamento de Pergunta
 @startuml
-!theme plain
 skinparam state {
     BorderColor DarkBlue
     FontSize 12
 }
 
+
 [*] --> Aguardando : Sistema pronto
 
 state Aguardando {
-    Aguardando : Campo disponível para pergunta
+  Aguardando : Campo disponível para pergunta
+  Aguardando : Seleção de documento ativa
 }
 
 state Processando {
-    Processando : Sistema processando pergunta
-    Processando : Consultando base + LLM
+  Processando : Sistema processando pergunta
+  Processando : Consultando base + LLM
 }
 
 state Respondendo {
-    Respondendo : Exibindo resposta
-    Respondendo : Salvando no histórico
+  Respondendo : Exibindo resposta
+  Respondendo : Salvando no histórico
 }
 
 state Erro {
-    Erro : Falha no processamento
+  Erro : Falha no processamento
 }
 
 Aguardando --> Processando : Usuário envia pergunta

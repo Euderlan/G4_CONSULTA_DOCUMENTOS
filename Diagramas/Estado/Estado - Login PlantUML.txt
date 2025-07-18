@@ -1,0 +1,36 @@
+Estado - Login
+
+@startuml
+skinparam state {
+    BorderColor DarkBlue
+    FontSize 12
+}
+
+[*] --> NaoAutenticado : Sistema pronto
+
+state NaoAutenticado {
+  NaoAutenticado : Página inicial disponível
+  NaoAutenticado : Sem sessão ativa
+}
+
+state Autenticando {
+  Autenticando : Validando credenciais
+  Autenticando : Verificando dados
+}
+
+state Autenticado {
+  Autenticado : Sessão ativa
+  Autenticado : Acesso liberado
+}
+
+state Erro {
+  Erro : Falha na autenticação
+}
+
+NaoAutenticado --> Autenticando : Usuário faz login
+Autenticando --> Autenticado : Credenciais válidas
+Autenticando --> Erro : Credenciais inválidas
+Erro --> NaoAutenticado : Tentar novamente
+Autenticado --> NaoAutenticado : Logout
+
+@enduml

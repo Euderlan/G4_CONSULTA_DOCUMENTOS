@@ -1,0 +1,43 @@
+Estado - Solicitar Admin
+@startuml
+skinparam state {
+BorderColor DarkBlue
+    FontSize 12
+}
+
+
+[*] --> Inexistente : Sistema pronto
+
+state Inexistente {
+  Inexistente : Nenhuma solicitação
+  Inexistente : Botão solicitar disponível
+}
+
+state Pendente {
+  Pendente : Aguardando análise
+  Pendente : Visível para admins
+}
+
+state Analisando {
+  Analisando : Admin revisando
+  Analisando : Avaliando justificativa
+}
+
+state Aprovada {
+  Aprovada : Usuário promovido
+  Aprovada : Notificação enviada
+}
+
+state Rejeitada {
+  Rejeitada : Solicitação negada
+  Rejeitada : Usuário notificado
+}
+
+Inexistente --> Pendente : Usuário solicita admin
+Pendente --> Analisando : Admin seleciona solicitação
+Analisando --> Aprovada : Admin aprova
+Analisando --> Rejeitada : Admin rejeita
+Aprovada --> [*]
+Rejeitada --> Inexistente : Nova solicitação
+
+@enduml

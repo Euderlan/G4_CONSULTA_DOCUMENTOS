@@ -1,0 +1,38 @@
+Estado - Status do Administrador
+@startuml
+skinparam state {
+    BorderColor DarkBlue
+    FontSize 12
+}
+
+[*] --> UsuarioComum : Cadastro realizado
+
+state UsuarioComum {
+  UsuarioComum : Sem privilégios admin
+  UsuarioComum : Acesso básico
+}
+
+state AdminRegular {
+  AdminRegular : Privilégios administrativos
+  AdminRegular : Gerencia resoluções
+}
+
+state AdminSuspenso {
+  AdminSuspenso : Privilégios suspensos
+  AdminSuspenso : Acesso limitado
+}
+
+state SuperAdmin {
+  SuperAdmin : Máximos privilégios
+  SuperAdmin : Gerencia admins
+}
+
+UsuarioComum --> AdminRegular : Promovido
+AdminRegular --> UsuarioComum : Privilégios removidos
+AdminRegular --> AdminSuspenso : Suspenso
+AdminRegular --> SuperAdmin : Promovido a super
+AdminSuspenso --> AdminRegular : Reativado
+AdminSuspenso --> UsuarioComum : Removido
+SuperAdmin --> AdminRegular : Rebaixado
+
+@enduml
