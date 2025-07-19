@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ChatView.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ChatView.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file ChatView.js
+ * @brief Componente principal da interface de chat com IA para consulta de documentos
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState } from 'react';
+import {
+  MessageSquare,
+  History,
+  Shield,
+  LogOut,
+  Zap,
+  Send,
+  ThumbsUp,
+  ThumbsDown,
+  AlertTriangle,
+  Copy,
+  FileText,
+  Clock
+} from 'lucide-react';
+import './ChatView.css';
+import AdminRequestButton from '../AdminRequestButton/AdminRequestButton';
+import DocumentSelector from '../DocumentSelector/DocumentSelector'; 
+
+/**
+ * Componente principal da interface de chat
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {Object} props.user - Dados do usuário logado
+ * @param {string} props.user.name - Nome do usuário
+ * @param {string} props.user.email - Email do usuário
+ * @param {boolean} props.user.isAdmin - Se o usuário é administrador
+ * @param {Function} props.setCurrentView - Função para alterar a view atual
+ * @param {Array&lt;Object>} props.chatMessages - Lista de mensagens do chat
+ * @param {Function} props.setChatMessages - Função para atualizar mensagens
+ * @param {string} props.currentMessage - Mensagem atual sendo digitada
+ * @param {boolean} props.isLoading - Estado de carregamento da resposta
+ * @param {Array&lt;string>} props.suggestions - Sugestões contextuais
+ * @param {Array&lt;string>} props.quickSuggestions - Sugestões iniciais
+ * @param {string} props.documentVersion - Versão dos documentos
+ * @param {Function} props.handleLogout - Função para realizar logout
+ * @param {Function} props.handleInputChange - Função para mudança do input
+ * @param {Function} props.handleSendMessage - Função para enviar mensagem
+ * @param {Function} props.handleKeyDown - Função para eventos de teclado
+ * @param {Function} props.handleFeedback - Função para processar feedback
+ * @param {Function} props.copyToClipboard - Função para copiar texto
+ * @param {Function} props.reportError - Função para reportar erros
+ * @param {Function} props.setCurrentMessage - Função para definir mensagem atual
+ * @param {Function} props.setSuggestions - Função para definir sugestões
+ * @param {string} props.API_BASE_URL - URL base da API
+ * @returns {JSX.Element} Componente renderizado da interface de chat
+ * 
+ * @example
+ * &lt;ChatView
+ *   user={{name: "João", email: "joao@ufma.br", isAdmin: false}}
+ *   chatMessages={messages}
+ *   setChatMessages={setMessages}
+ *   currentMessage=""
+ *   isLoading={false}
+ *   // ... outras props
+ * />
+ */
+const ChatView = ({
+  user,
+  setCurrentView,
+  chatMessages,
+  setChatMessages,
+  currentMessage,
+  isLoading,
+  suggestions,
+  quickSuggestions,
+  documentVersion,
+  handleLogout,
+  handleInputChange,
+  handleSendMessage,
+  handleKeyDown,
+  handleFeedback,
+  copyToClipboard,
+  reportError,
+  setCurrentMessage,
+  setSuggestions,
+  API_BASE_URL
+}) => {
+  // Estado local para rastrear feedback dado pelo usuário em cada mensagem
+  /** @type {Object} Mapeamento de ID da mensagem para tipo de feedback */
+  const [messageFeedback, setMessageFeedback] = useState({});
+  
+  // Estado para documento selecionado
+  /** @type {string} ID do documento selecionado ou 'all' para todos */
+  const [selectedDocument, setSelectedDocument] = useState('all');
+  
+  // Estado para controlar se o seletor de documentos está visível
+  /** @type {boolean} Controle de visibilidade do seletor de documentos */
+  const [showDocumentSelector, setShowDocumentSelector] = useState(false);
+
+  /**
+   * Gerencia feedback do usuário com estado visual local
+   * @function handleFeedbackWithState
+   * @param {number|string} messageId - ID da mensagem
+   * @param {string} feedbackType - Tipo de feedback ('positive' ou 'negative')
+   * @returns {void}
+   */
+  const handleFeedbackWithState = (messageId, feedbackType) => {
+    // Atualizar estado local para mostrar feedback visual imediato
+    setMessageFeedback(prev => ({
+      ...prev,
+      [messageId]: feedbackType
+    }));
+    
+    // Chamar função original de feedback passada como prop
+    handleFeedback(messageId, feedbackType);
+  };
+
+  /**
+   * Manipula seleção de documento específico
+   * @function handleDocumentSelect
+   * @param {string} docId - ID do documento selecionado
+   * @returns {void}
+   */
+  const handleDocumentSelect = (docId) => {
+    setSelectedDocument(docId);
+    setShowDocumentSelector(false);
+  };
+
+  /**
+   * Alterna visibilidade do seletor de documentos
+   * @function toggleDocumentSelector
+   * @returns {void}
+   */
+  const toggleDocumentSelector = () => {
+    setShowDocumentSelector(!showDocumentSelector);
+  };
+
+  /**
+   * Abre seletor para alteração de documento
+   * @function handleChangeDocument
+   * @returns {void}
+   */
+  const handleChangeDocument = () => {
+    setShowDocumentSelector(true);
+  };
+
+  /**
+   * Envia mensagem personalizada incluindo documento selecionado
+   * @async
+   * @function handleSendMessageWithDocument
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de conexão ou API
+   */
+  const handleSendMessageWithDocument = async () => {
+    if (!currentMessage.trim() || isLoading) return;
+
+    const questionToSend = currentMessage;
+    setCurrentMessage('');
+    setSuggestions([]);
+
+    // Cria mensagem do usuário
+    const newUserMessage = {
+      id: chatMessages.length + 1,
+      text: questionToSend,
+      sender: 'user',
+      timestamp: new Date().toLocaleTimeString(),
+      sources: []
+    };
+
+    setChatMessages((prevMessages) => [...prevMessages, newUserMessage]);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          question: questionToSend,
+          selected_document: selectedDocument
+        }),
+      });
+
+      // Verifica se a sessão ainda é válida
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert('Sessão expirada ou não autorizada. Por favor, faça login novamente.');
+          handleLogout();
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta da API de chat:", data);
+
+      // Cria mensagem de resposta do bot
+      const botMessage = {
+        id: chatMessages.length + 2,
+        text: data.answer,
+        sender: 'bot',
+        timestamp: new Date().toLocaleTimeString(),
+        sources: data.sources?.map(source => ({
+          filename: source.filename || 'Documento',
+          content: source.conteudo || source.content,
+          score: source.score,
+          chunk_order: source.chunk_order,
+          start_char: source.start_char,
+          end_char: source.end_char
+        })) || []
+      };
+
+      setChatMessages((prevMessages) => [...prevMessages, botMessage]);
+
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      setChatMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: prevMessages.length + 2,
+          text: `Desculpe, não consegui obter uma resposta. Por favor, tente novamente. (Erro: ${error.message})`,
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString(),
+          isError: true,
+        },
+      ]);
+      reportError(`Erro ao enviar mensagem: ${error.message}`);
+    }
+  };
+
+  /**
+   * Manipula eventos de teclado com suporte a documento selecionado
+   * @function handleKeyDownWithDocument
+   * @param {KeyboardEvent} event - Evento de teclado
+   * @returns {void}
+   */
+  const handleKeyDownWithDocument = (event) => {
+    if (event.key === 'Enter' &amp;&amp; !isLoading) {
+      handleSendMessageWithDocument();
+    }
+  };
+
+  return (
+    &lt;div className="chat-container">
+      {/* Cabeçalho da aplicação de chat */}
+      &lt;header className="chat-header">
+        &lt;div className="header-content">
+          {/* Lado esquerdo: Logo e informações do sistema */}
+          &lt;div className="header-left">
+            &lt;div className="header-logo">
+              &lt;MessageSquare size={24} />
+            &lt;/div>
+            &lt;div className="header-text">
+              &lt;h1 className="header-title">Sistema de Consultas UFMA&lt;/h1>
+              &lt;p className="header-subtitle">Consultas Inteligentes via LLM&lt;/p>
+            &lt;/div>
+          &lt;/div>
+
+          {/* Lado direito: Navegação e informações do usuário */}
+          &lt;div className="header-right">
+            {/* Botão para acessar histórico de conversas */}
+            &lt;button
+              onClick={() => setCurrentView('history')}
+              className="header-button"
+              title="Ver Histórico"
+            >
+              &lt;History size={20} />
+            &lt;/button>
+
+            {/* Botão de solicitação de admin - apenas para usuários não-admin */}
+            {!user?.isAdmin &amp;&amp; user?.email !== 'admin@ufma.br' &amp;&amp; (
+              &lt;AdminRequestButton 
+                user={user} 
+                API_BASE_URL={API_BASE_URL}
+              />
+            )}
+
+            {/* Botão Admin - renderizado condicionalmente apenas para administradores */}
+            {(user?.isAdmin || user?.email === 'admin@ufma.br') &amp;&amp; (
+              &lt;button
+                onClick={() => setCurrentView('admin')}
+                className="header-button admin-button"
+                title="Painel Administrativo"
+              >
+                &lt;Shield size={20} />
+              &lt;/button>
+            )}
+
+            {/* Seção de informações do usuário logado */}
+            &lt;div className="user-info">
+              {/* Avatar gerado dinamicamente com fallback */}
+              &lt;img 
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&amp;backgroundColor=2563eb&amp;radius=50`}
+                alt="Avatar do usuário" 
+                className="user-avatar"
+                onError={(e) => {
+                  // Fallback para outro serviço de avatar em caso de erro
+                  e.target.src = `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(user?.name || user?.email || 'User')}&amp;backgroundColor=2563eb`;
+                }}
+              />
+              &lt;div className="user-details">
+                &lt;div className="user-name">
+                  {user?.name || user?.username || user?.email?.split('@')[0] || 'Usuário'}
+                &lt;/div>
+                &lt;div className="user-role">
+                  {user?.isAdmin ? 'Administrador' : 'Usuário'}
+                &lt;/div>
+              &lt;/div>
+              &lt;button
+                onClick={handleLogout}
+                className="header-button"
+                title="Sair"
+              >
+                &lt;LogOut size={20} />
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+        &lt;/div>
+      &lt;/header>
+
+      {/* Área principal do chat */}
+      &lt;main className="chat-main">
+        &lt;div className="chat-messages">
+          {/* Tela de boas-vindas com sugestões iniciais - mostrada quando não há mensagens */}
+          {chatMessages.length === 0 &amp;&amp; !isLoading &amp;&amp; (
+            &lt;div className="welcome-suggestions">
+              &lt;div className="welcome-message">
+                &lt;h3>👋 Bem-vindo ao Sistema de Consultas UFMA!&lt;/h3>
+                &lt;p>Faça perguntas sobre regulamentos e documentos da universidade. Primeiro, escolha em qual documento deseja buscar ou consulte todos:&lt;/p>
+              &lt;/div>
+              
+              {/* Seletor de documentos */}
+              &lt;DocumentSelector
+                selectedDocument={selectedDocument}
+                onDocumentSelect={handleDocumentSelect}
+                API_BASE_URL={API_BASE_URL}
+              />
+              
+              &lt;div className="initial-suggestions">
+                &lt;h4 style={{ margin: '1.5rem 0 1rem 0', textAlign: 'center', color: '#374151', fontSize: '1rem' }}>
+                  Sugestões para começar:
+                &lt;/h4>
+                {quickSuggestions.map((suggestion, index) => (
+                  &lt;button
+                    key={index}
+                    onClick={() => {
+                      setCurrentMessage(suggestion);
+                      setSuggestions([]);
+                    }}
+                    className="initial-suggestion-item"
+                  >
+                    &lt;Zap size={16} className="suggestion-icon" />
+                    &lt;span>{suggestion}&lt;/span>
+                  &lt;/button>
+                ))}
+              &lt;/div>
+            &lt;/div>
+          )}
+
+          {/* Renderização das mensagens do chat */}
+          {chatMessages.map((message) => (
+            &lt;div key={message.id} className={`chat-message ${message.sender}`}>
+              &lt;div className="message-content">
+                {/* Indicador de erro para mensagens com problemas */}
+                {message.isError &amp;&amp; (
+                  &lt;div className="error-indicator" title="Ocorreu um erro">
+                    &lt;AlertTriangle size={16} />
+                  &lt;/div>
+                )}
+                &lt;p>{message.text}&lt;/p>
+
+                {/* Seção de fontes consultadas para respostas do bot */}
+                {message.sender === 'bot' &amp;&amp; message.sources &amp;&amp; message.sources.length > 0 &amp;&amp; (
+                  &lt;div className="message-sources">
+                    &lt;h4>Fontes Consultadas:&lt;/h4>
+                    &lt;ul>
+                      {message.sources.map((source, index) => (
+                        &lt;li key={index} className="source-item">
+                          &lt;FileText size={14} className="source-icon" />
+                          &lt;strong className="source-filename">{source.filename}&lt;/strong>
+                          {source.content &amp;&amp; (
+                            &lt;span className="source-content-snippet">
+                              : "{source.content.substring(0, 150)}..."
+                            &lt;/span>
+                          )}
+                        &lt;/li>
+                      ))}
+                    &lt;/ul>
+                  &lt;/div>
+                )}
+
+                {/* Ações disponíveis para as mensagens */}
+                &lt;div className="message-actions">
+                  {/* Botões de feedback apenas para mensagens do bot */}
+                  {message.sender === 'bot' &amp;&amp; (
+                    &lt;>
+                      &lt;button
+                        onClick={() => handleFeedbackWithState(message.id, 'positive')}
+                        className={`feedback-button ${messageFeedback[message.id] === 'positive' ? 'feedback-active-positive' : ''}`}
+                        title="Útil"
+                      >
+                        &lt;ThumbsUp size={16} />
+                      &lt;/button>
+                      &lt;button
+                        onClick={() => handleFeedbackWithState(message.id, 'negative')}
+                        className={`feedback-button ${messageFeedback[message.id] === 'negative' ? 'feedback-active-negative' : ''}`}
+                        title="Não útil"
+                      >
+                        &lt;ThumbsDown size={16} />
+                      &lt;/button>
+                      &lt;button
+                        onClick={() => copyToClipboard(message.text)}
+                        className="copy-button"
+                        title="Copiar texto"
+                      >
+                        &lt;Copy size={16} />
+                      &lt;/button>
+                    &lt;/>
+                  )}
+                  &lt;span className="message-timestamp">{message.timestamp}&lt;/span>
+                &lt;/div>
+
+                {/* Disclaimer sobre possíveis erros do AI - apenas para mensagens do bot */}
+                {message.sender === 'bot' &amp;&amp; (
+                  &lt;div className="message-disclaimer">
+                    &lt;span>O ConsultAI pode cometer erros. Confira sempre as respostas.&lt;/span>
+                  &lt;/div>
+                )}
+              &lt;/div>
+            &lt;/div>
+          ))}
+
+          {/* Indicador de carregamento quando o bot está processando */}
+          {isLoading &amp;&amp; (
+            &lt;div className="chat-message bot loading-message">
+              &lt;div className="message-content">
+                &lt;div className="spinner">&lt;/div>
+                &lt;p>Digitando...&lt;/p>
+              &lt;/div>
+            &lt;/div>
+          )}
+        &lt;/div>
+      &lt;/main>
+
+      {/* Área de entrada de chat com sugestões e input */}
+      &lt;div className="chat-input-area">
+        {/* Seletor de documentos expansível */}
+        {showDocumentSelector &amp;&amp; (
+          &lt;DocumentSelector
+            selectedDocument={selectedDocument}
+            onDocumentSelect={handleDocumentSelect}
+            API_BASE_URL={API_BASE_URL}
+          />
+        )}
+
+        {/* Indicador do documento selecionado com botões melhorados */}
+        {selectedDocument &amp;&amp; selectedDocument !== 'all' ? (
+          &lt;div className="selected-document-indicator">
+            &lt;FileText size={14} />
+            &lt;span>Consultando: {selectedDocument.replace('.pdf', '')}&lt;/span>
+            &lt;div style={{ display: 'flex', gap: '0.5rem' }}>
+              &lt;button 
+                onClick={handleChangeDocument}
+                className="change-document-button"
+                title="Escolher outro documento"
+              >
+                Alterar
+              &lt;/button>
+              
+              &lt;button 
+                onClick={() => setSelectedDocument('all')} 
+                className="change-document-button" 
+                title="Voltar para todos os documentos" 
+                style={{ 
+                  backgroundColor: '#6b7280', 
+                  borderColor: '#6b7280', 
+                  color: 'white',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.backgroundColor = '#4b5563';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.1)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.backgroundColor = '#6b7280';
+                }}
+              >
+                Remover
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+        ) : (
+          /* Botão para abrir seletor quando nenhum documento específico está selecionado */
+          &lt;div className="selected-document-indicator">
+            &lt;FileText size={14} />
+            &lt;span>Consultando todos os documentos&lt;/span>
+            &lt;button 
+              onClick={toggleDocumentSelector}
+              className="change-document-button"
+              title="Escolher documento específico"
+            >
+              Escolher Documento
+            &lt;/button>
+          &lt;/div>
+        )}
+
+        {/* Container de sugestões contextuais - mostrado quando há sugestões disponíveis */}
+        {suggestions.length > 0 &amp;&amp; (
+          &lt;div className="suggestions-container">
+            &lt;div className="suggestions-list">
+              {suggestions.map((suggestion, index) => (
+                &lt;button
+                  key={index}
+                  onClick={() => {
+                    setCurrentMessage(suggestion);
+                    setSuggestions([]);
+                  }}
+                  className="suggestion-item"
+                >
+                  &lt;span className="suggestion-item-text">
+                    &lt;Zap size={14} className="suggestion-icon" />
+                    {suggestion}
+                  &lt;/span>
+                &lt;/button>
+              ))}
+            &lt;/div>
+          &lt;/div>
+        )}
+
+        {/* Container principal do input de mensagem */}
+        &lt;div className="input-container">
+          &lt;div className="input-wrapper">
+            &lt;input
+              type="text"
+              value={currentMessage}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDownWithDocument}
+              placeholder="Digite sua pergunta sobre os documentos da UFMA..."
+              className="chat-input"
+              disabled={isLoading}
+            />
+          &lt;/div>
+
+          {/* Botão de enviar mensagem */}
+          &lt;button
+            onClick={handleSendMessageWithDocument}
+            disabled={isLoading || !currentMessage.trim()}
+            className="send-button"
+          >
+            {isLoading ? (
+              &lt;div className="spinner-white">&lt;/div>
+            ) : (
+              &lt;Send size={24} />
+            )}
+          &lt;/button>
+        &lt;/div>
+
+        {/* Dica de uso para o usuário */}
+        &lt;div className="input-tip">
+          &lt;span>
+            {selectedDocument === 'all' 
+              ? 'Consultando todos os documentos disponíveis' 
+              : `Consultando: ${selectedDocument?.replace('.pdf', '') || 'documento selecionado'}`
+            }
+          &lt;/span>
+        &lt;/div>
+      &lt;/div>
+    &lt;/div>
+  );
+};
+
+export default ChatView;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

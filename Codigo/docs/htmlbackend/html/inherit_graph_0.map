@@ -1,0 +1,31 @@
+<map id="Representação gráfica da hiearquia da classe" name="Representação gráfica da hiearquia da classe">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,367,92,393"/>
+<area shape="rect" id="Node000001" href="$classadmin__management_1_1_admin_action.html" title="Modelo para ações administrativas sobre usuários." alt="" coords="151,5,367,32"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="51,351,62,278,81,186,106,99,121,65,138,42,154,30,157,35,142,46,126,68,111,101,86,187,68,279,56,352"/>
+<area shape="rect" id="Node000002" href="$classadmin__management_1_1_admin_promotion.html" title="Modelo para dados de promoção de usuário a administrador." alt="" coords="140,56,378,83"/>
+<area shape="poly" id="edge2_Node000000_Node000002" title=" " alt="" coords="47,351,52,296,65,226,76,190,92,154,112,121,138,93,155,81,158,85,141,97,116,125,97,157,81,191,70,227,57,296,53,351"/>
+<area shape="rect" id="Node000003" href="$classadmin__management_1_1_admin_user.html" title="Modelo para representar dados de um usuário administrador." alt="" coords="155,107,362,133"/>
+<area shape="poly" id="edge3_Node000000_Node000003" title=" " alt="" coords="50,351,57,305,72,249,98,192,116,166,138,143,156,132,158,136,141,147,120,169,103,195,77,251,62,307,55,352"/>
+<area shape="rect" id="Node000004" href="$classadmin__requests_1_1_admin_request.html" title="Modelo para representar uma solicitação de privilégios administrativos." alt="" coords="157,157,360,184"/>
+<area shape="poly" id="edge4_Node000000_Node000004" title=" " alt="" coords="53,351,63,315,80,272,104,230,138,194,157,182,160,187,141,198,109,233,85,274,68,316,58,352"/>
+<area shape="rect" id="Node000005" href="$classadmin__requests_1_1_create_admin_request.html" title="Modelo para dados de criação de solicitação administrativa." alt="" coords="162,208,356,251"/>
+<area shape="poly" id="edge5_Node000000_Node000005" title=" " alt="" coords="62,351,93,305,114,281,138,260,161,248,163,253,141,265,117,285,97,308,66,354"/>
+<area shape="rect" id="Node000006" href="$classadmin__requests_1_1_review_admin_request.html" title="Modelo para dados de revisão de solicitação administrativa." alt="" coords="160,275,358,317"/>
+<area shape="poly" id="edge6_Node000000_Node000006" title=" " alt="" coords="82,356,139,327,170,315,172,320,141,332,85,361"/>
+<area shape="rect" id="Node000007" href="$classchat_1_1_chat_request.html" title="Modelo de dados para requisições de chat." alt="" coords="195,341,322,368"/>
+<area shape="poly" id="edge7_Node000000_Node000007" title=" " alt="" coords="106,370,194,360,195,365,107,376"/>
+<area shape="rect" id="Node000008" href="$classhistory_1_1_chat_entry.html" title="Modelo para uma entrada de conversa no histórico." alt="" coords="198,392,320,419"/>
+<area shape="poly" id="edge8_Node000000_Node000008" title=" " alt="" coords="107,384,197,395,197,401,106,390"/>
+<area shape="rect" id="Node000009" href="$classhistory_1_1_save_chat_request.html" title="Modelo para requisição de salvamento manual de conversa." alt="" coords="174,443,344,469"/>
+<area shape="poly" id="edge9_Node000000_Node000009" title=" " alt="" coords="84,400,141,428,177,439,176,445,139,433,82,404"/>
+<area shape="rect" id="Node000010" href="$classlogin_1_1_google_login_request.html" title="Modelo para requisição de login com Google OAuth." alt="" coords="172,493,346,520"/>
+<area shape="poly" id="edge10_Node000000_Node000010" title=" " alt="" coords="68,405,99,444,119,463,141,479,173,493,171,498,138,484,115,467,95,448,64,408"/>
+<area shape="rect" id="Node000011" href="$classlogin_1_1_token.html" title="Modelo para resposta de token de autenticação." alt="" coords="215,544,302,571"/>
+<area shape="poly" id="edge11_Node000000_Node000011" title=" " alt="" coords="61,407,90,470,113,503,141,530,177,547,215,554,214,559,176,552,138,534,109,506,85,473,56,409"/>
+<area shape="rect" id="Node000012" href="$classlogin_1_1_token_data.html" title="Modelo para dados extraídos do token JWT." alt="" coords="201,595,316,621"/>
+<area shape="poly" id="edge12_Node000000_Node000012" title=" " alt="" coords="57,408,66,448,82,495,107,542,123,562,141,581,170,596,201,604,200,609,168,601,138,585,119,566,102,544,77,497,61,449,52,409"/>
+<area shape="rect" id="Node000013" href="$classlogin_1_1_user_create.html" title="Modelo para criação de novos usuários." alt="" coords="199,645,318,672"/>
+<area shape="poly" id="edge13_Node000000_Node000013" title=" " alt="" coords="54,408,60,457,74,518,100,579,119,607,141,631,169,647,200,655,198,660,167,652,138,635,115,611,96,582,69,519,55,458,49,409"/>
+<area shape="rect" id="Node000014" href="$classlogin_1_1_user_response.html" title="Modelo para resposta com dados do usuário." alt="" coords="189,696,328,723"/>
+<area shape="poly" id="edge14_Node000000_Node000014" title=" " alt="" coords="52,408,55,466,67,540,79,579,94,617,115,652,141,682,164,696,189,704,188,710,161,701,138,686,111,655,90,619,74,581,62,542,50,467,47,409"/>
+</map>

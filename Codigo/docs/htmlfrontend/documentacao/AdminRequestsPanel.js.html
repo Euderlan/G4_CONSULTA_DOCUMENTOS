@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: AdminRequestsPanel.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: AdminRequestsPanel.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file AdminRequestsPanel.js
+ * @brief Componente React para gerenciar solicitações de privilégios administrativos
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Shield, CheckCircle, XCircle, Clock, User, RefreshCw } from 'lucide-react';
+import './AdminRequestsPanel.css'; // Importa os estilos específicos do painel
+
+/**
+ * Painel para visualizar e processar solicitações de privilégios administrativos
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {string} props.API_BASE_URL - URL base da API do backend
+ * @returns {JSX.Element} Componente renderizado do painel de solicitações
+ * 
+ * @example
+ * &lt;AdminRequestsPanel API_BASE_URL="http://localhost:8000" />
+ */
+const AdminRequestsPanel = ({ API_BASE_URL }) => {
+  // Estados para armazenar as solicitações, estado de carregamento e os IDs em processamento
+  
+  /** @type {Array&lt;Object>} Lista de solicitações pendentes */
+  const [requests, setRequests] = useState([]);
+  
+  /** @type {boolean} Estado de carregamento das solicitações */
+  const [isLoading, setIsLoading] = useState(true);
+  
+  /** @type {Set&lt;number>} Set com IDs das solicitações sendo processadas */
+  const [processingIds, setProcessingIds] = useState(new Set());
+
+  /**
+   * Hook de efeito para carregar solicitações ao montar o componente
+   */
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  /**
+   * Busca todas as solicitações pendentes na API
+   * @async
+   * @function fetchRequests
+   * @returns {Promise&lt;void>}
+   */
+  const fetchRequests = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token'); // Recupera token do localStorage
+      const response = await fetch(`${API_BASE_URL}/api/admin-requests/requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Se a resposta for bem-sucedida, atualiza o estado com as solicitações
+      if (response.ok) {
+        const data = await response.json();
+        setRequests(data.requests || []);
+      } else {
+        console.error('Erro ao buscar solicitações');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar solicitações:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Processa uma solicitação (aprovar ou negar)
+   * @async
+   * @function handleReviewRequest
+   * @param {number} requestId - ID da solicitação a ser processada
+   * @param {string} action - Ação a ser executada ('approve' ou 'deny')
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de conexão ou processamento
+   * 
+   * @example
+   * handleReviewRequest(123, 'approve') // Aprova a solicitação ID 123
+   * handleReviewRequest(456, 'deny')    // Nega a solicitação ID 456
+   */
+  const handleReviewRequest = async (requestId, action) => {
+    setProcessingIds(prev => new Set(prev).add(requestId)); // Marca como em processamento
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-requests/requests/${requestId}/review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action }) // Corpo da requisição define a ação
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const actionText = action === 'approve' ? 'aprovada' : 'negada';
+        alert(`✅ Solicitação ${actionText} com sucesso!`);
+
+        // Remove a solicitação da lista local
+        setRequests(prev => prev.filter(req => req.id !== requestId));
+      } else {
+        alert('Erro: ' + (data.detail || 'Falha ao processar solicitação'));
+      }
+    } catch (error) {
+      console.error('Erro ao processar solicitação:', error);
+      alert('Erro de conexão. Tente novamente.');
+    } finally {
+      // Remove o ID da lista de processamento
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+    }
+  };
+
+  /**
+   * Formata data e hora no padrão brasileiro
+   * @function formatDate
+   * @param {string} dateString - String de data em formato ISO
+   * @returns {string} Data formatada no padrão brasileiro (dd/mm/yyyy hh:mm)
+   * 
+   * @example
+   * formatDate("2024-01-15T10:30:00") // "15/01/2024, 10:30"
+   */
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Componente de carregamento
+  if (isLoading) {
+    return (
+      &lt;div className="requests-panel loading">
+        &lt;div className="loading-spinner">&lt;/div>
+        &lt;p>Carregando solicitações...&lt;/p>
+      &lt;/div>
+    );
+  }
+
+  return (
+    &lt;div className="admin-requests-panel">
+      {/* Cabeçalho do painel */}
+      &lt;div className="panel-header">
+        {/* Título do painel com ícone e contador de solicitações */}
+        &lt;div className="panel-title">
+          &lt;Shield size={20} />
+          &lt;h3>Solicitações de Admin&lt;/h3>
+          &lt;span className="badge">{requests.length}&lt;/span>
+        &lt;/div>
+
+        {/* Botão de recarregar as solicitações */}
+        &lt;button 
+          onClick={fetchRequests}
+          className="refresh-button"
+          disabled={isLoading}
+        >
+          &lt;RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+        &lt;/button>
+      &lt;/div>
+
+      {/* Conteúdo principal do painel */}
+      &lt;div className="panel-content">
+        {requests.length === 0 ? (
+          /**
+           * Estado vazio quando não há solicitações pendentes
+           * Exibe mensagem informativa com ícone
+           */
+          &lt;div className="empty-state">
+            &lt;Clock size={48} />
+            &lt;h4>Nenhuma solicitação pendente&lt;/h4>
+            &lt;p>Todas as solicitações foram processadas.&lt;/p>
+          &lt;/div>
+        ) : (
+          /**
+           * Lista de solicitações pendentes
+           * Cada solicitação é renderizada como um card
+           */
+          &lt;div className="requests-list">
+            {requests.map((request) => (
+              &lt;div key={request.id} className="request-card">
+                {/* Cabeçalho com informações do usuário e data */}
+                &lt;div className="request-header">
+                  &lt;div className="user-info">
+                    &lt;User size={20} className="user-icon" />
+                    &lt;div className="user-details">
+                      &lt;h4>{request.user_name}&lt;/h4>
+                      &lt;p>{request.user_email}&lt;/p>
+                    &lt;/div>
+                  &lt;/div>
+                  &lt;div className="request-date">
+                    &lt;Clock size={14} />
+                    {formatDate(request.requested_at)}
+                  &lt;/div>
+                &lt;/div>
+
+                {/* Justificativa da solicitação */}
+                &lt;div className="request-reason">
+                  &lt;h5>Justificativa:&lt;/h5>
+                  &lt;p>{request.reason}&lt;/p>
+                &lt;/div>
+
+                {/* Botões de ação (negar/aprovar) */}
+                &lt;div className="request-actions">
+                  &lt;button
+                    onClick={() => handleReviewRequest(request.id, 'deny')}
+                    disabled={processingIds.has(request.id)}
+                    className="deny-button"
+                  >
+                    {processingIds.has(request.id) ? (
+                      &lt;div className="button-spinner">&lt;/div>
+                    ) : (
+                      &lt;XCircle size={16} />
+                    )}
+                    Negar
+                  &lt;/button>
+
+                  &lt;button
+                    onClick={() => handleReviewRequest(request.id, 'approve')}
+                    disabled={processingIds.has(request.id)}
+                    className="approve-button"
+                  >
+                    {processingIds.has(request.id) ? (
+                      &lt;div className="button-spinner">&lt;/div>
+                    ) : (
+                      &lt;CheckCircle size={16} />
+                    )}
+                    Aprovar
+                  &lt;/button>
+                &lt;/div>
+              &lt;/div>
+            ))}
+          &lt;/div>
+        )}
+      &lt;/div>
+    &lt;/div>
+  );
+};
+
+export default AdminRequestsPanel; // Exporta o componente para uso em outras partes do app</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

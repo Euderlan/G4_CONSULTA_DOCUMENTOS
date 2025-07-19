@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: GoogleLoginButton.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: GoogleLoginButton.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file GoogleLoginButton.js
+ * @brief Componente para autenticação via Google OAuth com Google Identity Services
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+
+/**
+ * Componente de botão para login com Google OAuth
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {Function} props.onSuccess - Callback executado quando login é bem-sucedido
+ * @param {Function} props.onError - Callback executado quando ocorre erro
+ * @param {boolean} [props.disabled=false] - Se o botão deve estar desabilitado
+ * @param {string} props.clientId - Client ID do Google OAuth
+ * @returns {JSX.Element} Componente renderizado do botão Google
+ * 
+ * @example
+ * &lt;GoogleLoginButton
+ *   clientId="sua-client-id.googleusercontent.com"
+ *   onSuccess={(userData) => console.log('Login sucesso:', userData)}
+ *   onError={(error) => console.error('Erro login:', error)}
+ *   disabled={false}
+ * />
+ */
+const GoogleLoginButton = ({ 
+  onSuccess, 
+  onError, 
+  disabled = false,
+  clientId
+}) => {
+  // Referência para o elemento DOM onde o botão do Google será renderizado
+  /** @type {React.RefObject&lt;HTMLDivElement>} Referência para container do botão */
+  const googleButtonRef = useRef(null);
+  
+  // Estado para controlar se a biblioteca do Google foi carregada
+  /** @type {boolean} Status de carregamento da biblioteca Google */
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  
+  // Estado para controlar se o botão foi renderizado com sucesso
+  /** @type {boolean} Status de renderização do botão */
+  const [isButtonRendered, setIsButtonRendered] = useState(false);
+
+  /**
+   * Processa resposta de autenticação do Google e extrai dados do usuário
+   * @function handleCredentialResponse
+   * @async
+   * @param {Object} response - Resposta da autenticação Google
+   * @param {string} response.credential - Token JWT do Google
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Quando token não é recebido ou há erro na decodificação
+   */
+  const handleCredentialResponse = useCallback(async (response) => {
+    try {
+      if (!response.credential) {
+        throw new Error('Token de credencial não recebido');
+      }
+
+      // Decodifica o JWT token para extrair informações do usuário
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      
+      // Organiza os dados do usuário em um objeto estruturado
+      const userData = {
+        google_token: response.credential,
+        google_id: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        email_verified: payload.email_verified || false,
+        given_name: payload.given_name,
+        family_name: payload.family_name,
+      };
+
+      console.log('Google Sign-In Success:', userData);
+      onSuccess(userData);
+    } catch (error) {
+      console.error('Erro ao processar resposta do Google:', error);
+      onError?.(error);
+    }
+  }, [onSuccess, onError]);
+
+  /**
+   * Renderiza o botão oficial do Google usando Google Identity Services
+   * @function renderGoogleButton
+   * @returns {void}
+   */
+  const renderGoogleButton = useCallback(() => {
+    // Verifica se todas as dependências estão disponíveis
+    if (!window.google?.accounts?.id || !clientId || disabled || !googleButtonRef.current) {
+      return;
+    }
+
+    try {
+      // Limpa o conteúdo anterior do container do botão
+      if (googleButtonRef.current) {
+        googleButtonRef.current.innerHTML = '';
+      }
+
+      // Inicializa a biblioteca do Google com as configurações
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      // Renderiza o botão do Google com as opções de estilo
+      window.google.accounts.id.renderButton(
+        googleButtonRef.current,
+        {
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+          width: "100%",
+        }
+      );
+
+      setIsButtonRendered(true);
+      console.log('Google button renderizado com sucesso');
+      
+    } catch (error) {
+      console.error('Erro ao renderizar botão Google:', error);
+      setIsButtonRendered(false);
+      onError?.(error);
+    }
+  }, [clientId, disabled, handleCredentialResponse, onError]);
+
+  /**
+   * Hook de efeito para verificar carregamento da biblioteca Google
+   * Verifica periodicamente se window.google.accounts.id está disponível
+   */
+  useEffect(() => {
+    let checkInterval;
+    
+    /**
+     * Verifica se a biblioteca do Google foi carregada
+     * @function checkGoogleLoaded
+     * @returns {boolean} True se a biblioteca estiver carregada
+     */
+    const checkGoogleLoaded = () => {
+      if (window.google?.accounts?.id) {
+        setIsGoogleLoaded(true);
+        if (checkInterval) {
+          clearInterval(checkInterval);
+        }
+        return true;
+      }
+      return false;
+    };
+
+    // Verifica imediatamente se o Google já está carregado
+    if (!checkGoogleLoaded()) {
+      // Se não carregou, verifica periodicamente a cada 100ms
+      checkInterval = setInterval(() => {
+        if (checkGoogleLoaded()) {
+          clearInterval(checkInterval);
+        }
+      }, 100);
+    }
+
+    // Cleanup: limpa o interval quando o componente é desmontado
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
+  }, []);
+
+  /**
+   * Hook de efeito para renderizar botão quando Google carregar
+   * Executa renderização com delay para garantir DOM pronto
+   */
+  useEffect(() => {
+    if (isGoogleLoaded &amp;&amp; !disabled) {
+      // Adiciona um pequeno delay para garantir que o DOM está pronto
+      const timer = setTimeout(() => {
+        renderGoogleButton();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isGoogleLoaded, disabled, renderGoogleButton]);
+
+  /**
+   * Hook de efeito fallback para re-renderizar botão se necessário
+   * Tenta novamente se o botão não renderizar na primeira tentativa
+   */
+  useEffect(() => {
+    if (isGoogleLoaded &amp;&amp; !isButtonRendered &amp;&amp; !disabled) {
+      const retryTimer = setTimeout(() => {
+        console.log('Tentando re-renderizar botão Google...');
+        renderGoogleButton();
+      }, 500);
+
+      return () => clearTimeout(retryTimer);
+    }
+  }, [isGoogleLoaded, isButtonRendered, disabled, renderGoogleButton]);
+
+  // Estado de carregamento: exibido enquanto a biblioteca do Google não carrega
+  if (!isGoogleLoaded) {
+    return (
+      &lt;div 
+        style={{ 
+          padding: '12px', 
+          textAlign: 'center', 
+          background: '#f8f9fa', 
+          border: '2px solid #e9ecef',
+          borderRadius: '8px',
+          color: '#6c757d',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}
+      >
+        &lt;div 
+          style={{
+            width: '16px',
+            height: '16px',
+            border: '2px solid #e9ecef',
+            borderTop: '2px solid #6c757d',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}
+        >&lt;/div>
+        Carregando Google Sign-In...
+      &lt;/div>
+    );
+  }
+
+  // Estado desabilitado: exibido quando o componente está processando
+  if (disabled) {
+    return (
+      &lt;button 
+        disabled 
+        className="google-button"
+        style={{ 
+          opacity: 0.5, 
+          cursor: 'not-allowed',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}
+      >
+        &lt;div className="spinner-dark">&lt;/div>
+        Autenticando...
+      &lt;/button>
+    );
+  }
+
+  // Renderização principal: container do botão do Google com fallback
+  return (
+    &lt;div style={{ width: '100%', minHeight: '40px' }}>
+      {/* Container onde o botão oficial do Google será renderizado */}
+      &lt;div ref={googleButtonRef} style={{ width: '100%' }}>&lt;/div>
+      
+      {/* Botão de fallback caso o botão oficial não renderize */}
+      {isGoogleLoaded &amp;&amp; !isButtonRendered &amp;&amp; (
+        &lt;button
+          onClick={() => {
+            console.log('Botão fallback clicado, tentando renderizar...');
+            renderGoogleButton();
+          }}
+          className="google-button"
+          style={{
+            width: '100%',
+            padding: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          {/* Ícone do Google em SVG */}
+          &lt;svg width="18" height="18" viewBox="0 0 24 24">
+            &lt;path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            &lt;path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            &lt;path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            &lt;path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          &lt;/svg>
+          🔄 Recarregar Google Sign-In
+        &lt;/button>
+      )}
+    &lt;/div>
+  );
+};
+
+export default GoogleLoginButton;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

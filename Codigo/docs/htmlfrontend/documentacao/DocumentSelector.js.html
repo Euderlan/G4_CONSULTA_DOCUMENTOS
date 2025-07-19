@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: DocumentSelector.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: DocumentSelector.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file DocumentSelector.js
+ * @brief Componente para seleção de documentos específicos no sistema de chat
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState, useEffect } from 'react';
+import { FileText, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import './DocumentSelector.css';
+
+/**
+ * Componente para seleção de documentos no chat
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {string} props.selectedDocument - ID do documento atualmente selecionado
+ * @param {Function} props.onDocumentSelect - Callback executado quando um documento é selecionado
+ * @param {string} props.API_BASE_URL - URL base da API para buscar documentos
+ * @returns {JSX.Element} Componente renderizado do seletor de documentos
+ * 
+ * @example
+ * &lt;DocumentSelector
+ *   selectedDocument="all"
+ *   onDocumentSelect={(docId) => console.log('Documento selecionado:', docId)}
+ *   API_BASE_URL="http://localhost:8000"
+ * />
+ */
+const DocumentSelector = ({ 
+  selectedDocument, 
+  onDocumentSelect, 
+  API_BASE_URL 
+}) => {
+  /** @type {Array&lt;Object>} Lista de documentos disponíveis */
+  const [documents, setDocuments] = useState([]);
+  
+  /** @type {string|null} ID do documento com resumo expandido */
+  const [expandedDocument, setExpandedDocument] = useState(null);
+  
+  /** @type {boolean} Estado de carregamento da lista de documentos */
+  const [isLoading, setIsLoading] = useState(true);
+
+  /**
+   * Hook de efeito para carregar documentos ao montar o componente
+   */
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  /**
+   * Busca lista de documentos disponíveis na API
+   * @async
+   * @function fetchDocuments
+   * @returns {Promise&lt;void>}
+   */
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/documents`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data);
+      } else {
+        console.error('Erro ao carregar documentos');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar documentos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Alterna expansão do resumo de um documento
+   * @function handleDocumentToggle
+   * @param {string} docId - ID do documento a ter o resumo expandido/recolhido
+   * @returns {void}
+   */
+  const handleDocumentToggle = (docId) => {
+    if (expandedDocument === docId) {
+      setExpandedDocument(null);
+    } else {
+      setExpandedDocument(docId);
+    }
+  };
+
+  /**
+   * Processa seleção de documento e fecha resumo expandido
+   * @function handleDocumentSelect
+   * @param {string} docId - ID do documento selecionado
+   * @returns {void}
+   */
+  const handleDocumentSelect = (docId) => {
+    onDocumentSelect(docId);
+    setExpandedDocument(null); // Fecha resumo ao selecionar
+  };
+
+  /**
+   * Formata nome do arquivo removendo timestamp e UUID
+   * @function formatFileName
+   * @param {string} filename - Nome original do arquivo
+   * @returns {string} Nome formatado sem extensão e metadados
+   * 
+   * @example
+   * formatFileName("20240115_abc123_resolucao.pdf") // "resolucao"
+   * formatFileName("documento.pdf") // "documento"
+   */
+  const formatFileName = (filename) => {
+    // Remove timestamp e UUID do nome do arquivo
+    if (filename.includes('_')) {
+      const parts = filename.split('_');
+      if (parts.length > 2) {
+        return parts.slice(2).join('_').replace('.pdf', '');
+      }
+    }
+    return filename.replace('.pdf', '');
+  };
+
+  // Componente de carregamento
+  if (isLoading) {
+    return (
+      &lt;div className="document-selector-loading">
+        &lt;div className="loading-spinner">&lt;/div>
+        &lt;p>Carregando documentos...&lt;/p>
+      &lt;/div>
+    );
+  }
+
+  return (
+    &lt;div className="document-selector">
+      {/* Cabeçalho do seletor */}
+      &lt;div className="document-selector-header">
+        &lt;h4>Escolha seu documento:&lt;/h4>
+      &lt;/div>
+      
+      {/* Opção para todos os documentos */}
+      &lt;div className="document-option">
+        &lt;button
+          onClick={() => handleDocumentSelect('all')}
+          className={`document-button ${selectedDocument === 'all' ? 'selected' : ''}`}
+        >
+          &lt;div className="document-button-content">
+            &lt;FileText size={16} className="document-icon" />
+            &lt;span className="document-name">Todos os Documentos&lt;/span>
+            {selectedDocument === 'all' &amp;&amp; (
+              &lt;Check size={16} className="selected-icon" />
+            )}
+          &lt;/div>
+        &lt;/button>
+      &lt;/div>
+
+      {/* Lista de documentos individuais */}
+      {documents.map((doc) => (
+        &lt;div key={doc.id} className="document-option">
+          &lt;div className="document-item">
+            {/* Botão principal do documento */}
+            &lt;button
+              onClick={() => handleDocumentToggle(doc.id)}
+              className={`document-button ${selectedDocument === doc.id ? 'selected' : ''}`}
+            >
+              &lt;div className="document-button-content">
+                &lt;FileText size={16} className="document-icon" />
+                &lt;span className="document-name">
+                  {formatFileName(doc.original_name)}
+                &lt;/span>
+                &lt;div className="document-actions">
+                  {selectedDocument === doc.id &amp;&amp; (
+                    &lt;Check size={16} className="selected-icon" />
+                  )}
+                  {expandedDocument === doc.id ? (
+                    &lt;ChevronUp size={16} className="expand-icon" />
+                  ) : (
+                    &lt;ChevronDown size={16} className="expand-icon" />
+                  )}
+                &lt;/div>
+              &lt;/div>
+            &lt;/button>
+
+            {/* Área de resumo expandido */}
+            {expandedDocument === doc.id &amp;&amp; (
+              &lt;div className="document-summary">
+                &lt;div className="summary-content">
+                  &lt;h5>Resumo do Documento:&lt;/h5>
+                  &lt;p>{doc.summary || 'Resumo não disponível'}&lt;/p>
+                &lt;/div>
+                &lt;button
+                  onClick={() => handleDocumentSelect(doc.id)}
+                  className="select-document-button"
+                >
+                  &lt;Check size={14} />
+                  Selecionar este documento
+                &lt;/button>
+              &lt;/div>
+            )}
+          &lt;/div>
+        &lt;/div>
+      ))}
+
+      {/* Estado vazio quando não há documentos */}
+      {documents.length === 0 &amp;&amp; (
+        &lt;div className="no-documents">
+          &lt;FileText size={24} className="no-documents-icon" />
+          &lt;p>Nenhum documento disponível&lt;/p>
+        &lt;/div>
+      )}
+    &lt;/div>
+  );
+};
+
+export default DocumentSelector;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

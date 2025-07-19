@@ -1,0 +1,13 @@
+<map id="document_processor.HybridDocumentProcessor._generate_fallback_summary" name="document_processor.HybridDocumentProcessor._generate_fallback_summary">
+<area shape="rect" id="Node000001" title="Gera resumo básico quando o Groq falha ou não está disponível." alt="" coords="724,72,926,131"/>
+<area shape="rect" id="Node000002" href="$classdocument__processor_1_1_hybrid_document_processor.html#a699cc06046cbda8e6a079960e3f35d08" title="Extrai texto completo de um arquivo PDF." alt="" coords="492,5,676,64"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="708,72,676,63,678,58,710,67"/>
+<area shape="rect" id="Node000004" href="$classdocument__processor_1_1_hybrid_document_processor.html#aa270b12f462b4526db040aaef0b00a13" title="Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação." alt="" coords="5,72,196,131"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="709,104,196,104,196,99,709,99"/>
+<area shape="rect" id="Node000005" href="$classdocument__processor_1_1_hybrid_document_processor.html#aad81b704a84a0ce339a2560228700c77" title="Gera resumo do documento usando Groq LLM com fallback robusto." alt="" coords="247,139,441,197"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="709,120,442,157,441,152,709,115"/>
+<area shape="rect" id="Node000003" href="$classdocument__processor_1_1_hybrid_document_processor.html#a1d7a46a2add4076b7c6be452a5c37649" title="Inserção otimizada no Pinecone com controle de qualidade." alt="" coords="244,5,444,64"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="477,37,444,37,444,32,477,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="229,69,197,78,196,73,228,64"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="231,140,196,130,197,125,233,135"/>
+</map>

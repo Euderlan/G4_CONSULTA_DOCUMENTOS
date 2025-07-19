@@ -1,0 +1,5 @@
+<map id="document_processor.HybridDocumentProcessor.generate_document_summary" name="document_processor.HybridDocumentProcessor.generate_document_summary">
+<area shape="rect" id="Node000001" title="Gera resumo do documento usando Groq LLM com fallback robusto." alt="" coords="244,5,438,64"/>
+<area shape="rect" id="Node000002" href="$classdocument__processor_1_1_hybrid_document_processor.html#aa270b12f462b4526db040aaef0b00a13" title="Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação." alt="" coords="5,5,196,64"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="228,37,196,37,196,32,228,32"/>
+</map>

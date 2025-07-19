@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: AdminRequestButton.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: AdminRequestButton.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file AdminRequestButton.js
+ * @brief Componente React para solicitar privilégios de administrador
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Shield, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
+import './AdminRequestButton.css';
+
+/**
+ * Componente para solicitação de privilégios administrativos
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {Object} props.user - Dados do usuário atual
+ * @param {boolean} props.user.isAdmin - Se o usuário já é administrador
+ * @param {string} props.API_BASE_URL - URL base da API do backend
+ * @returns {JSX.Element|null} Componente renderizado ou null se usuário já é admin
+ * 
+ * @example
+ * &lt;AdminRequestButton 
+ *   user={{isAdmin: false}} 
+ *   API_BASE_URL="http://localhost:8000" 
+ * />
+ */
+const AdminRequestButton = ({ user, API_BASE_URL }) => {
+  // Estados do componente
+  /** @type {boolean} Controle de exibição do modal */
+  const [showModal, setShowModal] = useState(false);
+  
+  /** @type {string} Justificativa para a solicitação */
+  const [reason, setReason] = useState('');
+  
+  /** @type {boolean} Estado de carregamento da requisição */
+  const [isLoading, setIsLoading] = useState(false);
+  
+  /** @type {Object|null} Dados da solicitação existente do usuário */
+  const [userRequest, setUserRequest] = useState(null);
+  
+  /**
+   * Hook de efeito para verificar solicitação existente ao montar componente
+   */
+  useEffect(() => {
+    checkUserRequest();
+  }, []);
+
+  /**
+   * Verifica se o usuário já possui uma solicitação pendente ou processada
+   * @async
+   * @function checkUserRequest
+   * @returns {Promise&lt;void>}
+   */
+  const checkUserRequest = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-requests/my-request`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.has_request) {
+          setUserRequest(data.request);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar solicitação:', error);
+    }
+  };
+
+  /**
+   * Envia nova solicitação de privilégios administrativos
+   * @async
+   * @function handleSubmitRequest
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de validação ou conexão
+   */
+  const handleSubmitRequest = async () => {
+    if (!reason.trim() || reason.trim().length &lt; 10) {
+      alert('A justificativa deve ter pelo menos 10 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-requests/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: reason.trim() })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert('✅ Solicitação enviada com sucesso! Aguarde a análise do administrador.');
+        setShowModal(false);
+        setReason('');
+        // Atualiza estado local
+        await checkUserRequest();
+      } else {
+        alert('Erro: ' + (data.detail || 'Falha ao enviar solicitação'));
+      }
+    } catch (error) {
+      console.error('Erro ao enviar solicitação:', error);
+      alert('Erro de conexão. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Retorna ícone apropriado baseado no status da solicitação
+   * @function getStatusIcon
+   * @param {string} status - Status da solicitação ('pending', 'approved', 'denied')
+   * @returns {JSX.Element|null} Ícone React correspondente ao status
+   * 
+   * @example
+   * getStatusIcon('pending') // &lt;Clock size={16} className="status-icon pending" />
+   */
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending': return &lt;Clock size={16} className="status-icon pending" />;
+      case 'approved': return &lt;CheckCircle size={16} className="status-icon approved" />;
+      case 'denied': return &lt;XCircle size={16} className="status-icon denied" />;
+      default: return null;
+    }
+  };
+
+  /**
+   * Retorna texto descritivo para o status da solicitação
+   * @function getStatusText
+   * @param {string} status - Status da solicitação
+   * @returns {string} Texto em português para o status
+   * 
+   * @example
+   * getStatusText('pending') // "Pendente"
+   * getStatusText('approved') // "Aprovada"
+   */
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending': return 'Pendente';
+      case 'approved': return 'Aprovada';
+      case 'denied': return 'Negada';
+      default: return 'Desconhecido';
+    }
+  };
+
+  // Não mostra nada se usuário já é admin
+  if (user?.isAdmin) {
+    return null;
+  }
+
+  return (
+    &lt;>
+      {/* Botão principal ou status da solicitação */}
+      {!userRequest ? (
+        /**
+         * Botão para abrir modal de solicitação
+         * Exibido apenas quando usuário não possui solicitação ativa
+         */
+        &lt;button
+          onClick={() => setShowModal(true)}
+          className="admin-request-button"
+          title="Solicitar privilégios de administrador"
+        >
+          &lt;Shield size={16} />
+          &lt;span className="request-text">Solicitar Admin&lt;/span>
+        &lt;/button>
+      ) : (
+        /**
+         * Indicador de status da solicitação existente
+         * Mostra ícone e texto do status atual
+         */
+        &lt;div className="request-status">
+          {getStatusIcon(userRequest.status)}
+          &lt;span className="status-text">
+            Admin: {getStatusText(userRequest.status)}
+          &lt;/span>
+        &lt;/div>
+      )}
+
+      {/* Modal de solicitação */}
+      {showModal &amp;&amp; (
+        &lt;div className="modal-overlay">
+          &lt;div className="modal-content">
+            {/* Cabeçalho do modal */}
+            &lt;div className="modal-header">
+              &lt;h3 className="modal-title">
+                &lt;Shield size={20} />
+                Solicitar Privilégios de Administrador
+              &lt;/h3>
+              &lt;button 
+                onClick={() => setShowModal(false)}
+                className="modal-close"
+                disabled={isLoading}
+              >
+                ×
+              &lt;/button>
+            &lt;/div>
+            
+            {/* Corpo do modal com formulário */}
+            &lt;div className="modal-body">
+              &lt;p className="modal-description">
+                Por favor, justifique por que você precisa de privilégios de administrador. 
+                Sua solicitação será analisada por um administrador atual.
+              &lt;/p>
+              
+              &lt;div className="form-group">
+                &lt;label className="form-label">Justificativa *&lt;/label>
+                &lt;textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="form-textarea"
+                  rows="4"
+                  placeholder="Ex: Sou responsável pelo departamento X e preciso gerenciar documentos relacionados aos cursos..."
+                  disabled={isLoading}
+                />
+                &lt;div className="char-counter">
+                  {reason.length}/500 caracteres (mínimo 10)
+                &lt;/div>
+              &lt;/div>
+            &lt;/div>
+            
+            {/* Rodapé do modal com botões de ação */}
+            &lt;div className="modal-footer">
+              &lt;button 
+                onClick={() => setShowModal(false)}
+                className="cancel-button"
+                disabled={isLoading}
+              >
+                Cancelar
+              &lt;/button>
+              &lt;button 
+                onClick={handleSubmitRequest}
+                className="submit-button"
+                disabled={isLoading || reason.trim().length &lt; 10}
+              >
+                {isLoading ? (
+                  &lt;>
+                    &lt;div className="spinner">&lt;/div>
+                    Enviando...
+                  &lt;/>
+                ) : (
+                  &lt;>
+                    &lt;Send size={16} />
+                    Enviar Solicitação
+                  &lt;/>
+                )}
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+        &lt;/div>
+      )}
+    &lt;/>
+  );
+};
+
+export default AdminRequestButton;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

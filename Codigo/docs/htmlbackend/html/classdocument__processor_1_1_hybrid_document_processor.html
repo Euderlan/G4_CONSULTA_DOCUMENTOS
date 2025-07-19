@@ -1,0 +1,578 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.14.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>consulta_documentos: Referência à classe document_processor.HybridDocumentProcessor</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">consulta_documentos
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Gerado por Doxygen 1.14.0 -->
+<script type="text/javascript">
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+</script>
+<script type="text/javascript">
+$(function() { codefold.init(); });
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+$(function() {
+  initMenu('',true,false,'search.php','Localizar',true);
+  $(function() { init_search(); });
+});
+</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+$(function(){initNavTree('classdocument__processor_1_1_hybrid_document_processor.html','','classdocument__processor_1_1_hybrid_document_processor-members'); });
+</script>
+<div id="container">
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Carregando...</div>
+<div class="SRStatus" id="Searching">Procurando...</div>
+<div class="SRStatus" id="NoMatches">Nenhuma entrada encontrada</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">Referência à classe document_processor.HybridDocumentProcessor</div></div>
+</div><!--header-->
+<div class="contents">
+
+<p>Processador híbrido de documentos combinando LangChain chunking, Sentence Transformers embeddings e resumo com LLM.  
+ <a href="#details">Mais...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Membros públicos</h2></td></tr>
+<tr class="memitem:aa9ccd27d8723306f492f707418e401ab" id="r_aa9ccd27d8723306f492f707418e401ab"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa9ccd27d8723306f492f707418e401ab">__init__</a> (self)</td></tr>
+<tr class="memdesc:aa9ccd27d8723306f492f707418e401ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inicializa o processador híbrido com configurações otimizadas.  <br /></td></tr>
+<tr class="memitem:a699cc06046cbda8e6a079960e3f35d08" id="r_a699cc06046cbda8e6a079960e3f35d08"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a699cc06046cbda8e6a079960e3f35d08">extract_text_from_pdf</a> (self, str file_path)</td></tr>
+<tr class="memdesc:a699cc06046cbda8e6a079960e3f35d08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extrai texto completo de um arquivo PDF.  <br /></td></tr>
+<tr class="memitem:aad81b704a84a0ce339a2560228700c77" id="r_aad81b704a84a0ce339a2560228700c77"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aad81b704a84a0ce339a2560228700c77">generate_document_summary</a> (self, str text, str filename)</td></tr>
+<tr class="memdesc:aad81b704a84a0ce339a2560228700c77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gera resumo do documento usando Groq LLM com fallback robusto.  <br /></td></tr>
+<tr class="memitem:aa0b9d84a7970b5d138a1eebdd0f42dc2" id="r_aa0b9d84a7970b5d138a1eebdd0f42dc2"><td class="memItemLeft" align="right" valign="top">List[Dict[str, Any]]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa0b9d84a7970b5d138a1eebdd0f42dc2">create_smart_chunks</a> (self, str text, str filename)</td></tr>
+<tr class="memdesc:aa0b9d84a7970b5d138a1eebdd0f42dc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cria chunks inteligentes usando LangChain para melhor preservação de contexto.  <br /></td></tr>
+<tr class="memitem:a05f074e51c818fcc4498e8e5551489b5" id="r_a05f074e51c818fcc4498e8e5551489b5"><td class="memItemLeft" align="right" valign="top">List[List[float]]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a05f074e51c818fcc4498e8e5551489b5">batch_generate_embeddings</a> (self, List[str] contents)</td></tr>
+<tr class="memdesc:a05f074e51c818fcc4498e8e5551489b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gera embeddings em lote otimizado para alta performance.  <br /></td></tr>
+<tr class="memitem:a1d7a46a2add4076b7c6be452a5c37649" id="r_a1d7a46a2add4076b7c6be452a5c37649"><td class="memItemLeft" align="right" valign="top">Dict[str, Any]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d7a46a2add4076b7c6be452a5c37649">optimized_pinecone_insert</a> (self, List[Dict] chunks, List[List[float]] embeddings, str filename, str summary)</td></tr>
+<tr class="memdesc:a1d7a46a2add4076b7c6be452a5c37649"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inserção otimizada no Pinecone com controle de qualidade.  <br /></td></tr>
+<tr class="memitem:aa270b12f462b4526db040aaef0b00a13" id="r_aa270b12f462b4526db040aaef0b00a13"><td class="memItemLeft" align="right" valign="top">Dict[str, Any]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa270b12f462b4526db040aaef0b00a13">process_pdf_hybrid</a> (self, str file_path, str filename)</td></tr>
+<tr class="memdesc:aa270b12f462b4526db040aaef0b00a13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Atributos Públicos</h2></td></tr>
+<tr class="memitem:a56d64bc1615389ddd6cc887c664f7d39" id="r_a56d64bc1615389ddd6cc887c664f7d39"><td class="memItemLeft" align="right" valign="top"><a id="a56d64bc1615389ddd6cc887c664f7d39" name="a56d64bc1615389ddd6cc887c664f7d39"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>chunk_size</b> = 2500</td></tr>
+<tr class="memdesc:a56d64bc1615389ddd6cc887c664f7d39"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tamanho dos chunks para preservar contexto. <br /></td></tr>
+<tr class="memitem:acb025506a450a236a3c5b49c107738bc" id="r_acb025506a450a236a3c5b49c107738bc"><td class="memItemLeft" align="right" valign="top"><a id="acb025506a450a236a3c5b49c107738bc" name="acb025506a450a236a3c5b49c107738bc"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>chunk_overlap</b> = 600</td></tr>
+<tr class="memdesc:acb025506a450a236a3c5b49c107738bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sobreposição entre chunks para continuidade. <br /></td></tr>
+<tr class="memitem:a93b1c5ac8deab396c5a7a2455f22b8be" id="r_a93b1c5ac8deab396c5a7a2455f22b8be"><td class="memItemLeft" align="right" valign="top"><a id="a93b1c5ac8deab396c5a7a2455f22b8be" name="a93b1c5ac8deab396c5a7a2455f22b8be"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>batch_size</b> = 32</td></tr>
+<tr class="memdesc:a93b1c5ac8deab396c5a7a2455f22b8be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tamanho do lote para processamento de embeddings. <br /></td></tr>
+<tr class="memitem:add0650d4335a278b7b25a00cb6ee5436" id="r_add0650d4335a278b7b25a00cb6ee5436"><td class="memItemLeft" align="right" valign="top"><a id="add0650d4335a278b7b25a00cb6ee5436" name="add0650d4335a278b7b25a00cb6ee5436"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>groq_client</b> = Groq(api_key=os.getenv(&quot;GROQ_API_KEY&quot;))</td></tr>
+<tr class="memdesc:add0650d4335a278b7b25a00cb6ee5436"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cliente para geração de resumos com LLM. <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Membros protegidos</h2></td></tr>
+<tr class="memitem:a39c112b3645e39dfd9a108574401c542" id="r_a39c112b3645e39dfd9a108574401c542"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39c112b3645e39dfd9a108574401c542">_generate_fallback_summary</a> (self, str text, str filename)</td></tr>
+<tr class="memdesc:a39c112b3645e39dfd9a108574401c542"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gera resumo básico quando o Groq falha ou não está disponível.  <br /></td></tr>
+<tr class="memitem:a48464728a5412353a2f3e5b9c06e9ab0" id="r_a48464728a5412353a2f3e5b9c06e9ab0"><td class="memItemLeft" align="right" valign="top">List[Dict[str, Any]]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48464728a5412353a2f3e5b9c06e9ab0">_manual_chunking</a> (self, str text, str filename)</td></tr>
+<tr class="memdesc:a48464728a5412353a2f3e5b9c06e9ab0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Chunking manual de backup com configurações otimizadas.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
+Atributos Protegidos</h2></td></tr>
+<tr class="memitem:ab65d71f0e7afbcea0b98fff9dce82c21" id="r_ab65d71f0e7afbcea0b98fff9dce82c21"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab65d71f0e7afbcea0b98fff9dce82c21">_model</a></td></tr>
+</table>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Descrição detalhada</h2>
+<div class="textblock"><p>Processador híbrido de documentos combinando LangChain chunking, Sentence Transformers embeddings e resumo com LLM. </p>
+</div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Documentação dos Construtores &amp; Destrutor</h2>
+<a id="aa9ccd27d8723306f492f707418e401ab" name="aa9ccd27d8723306f492f707418e401ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9ccd27d8723306f492f707418e401ab">&#9670;&#160;</a></span>__init__()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">document_processor.HybridDocumentProcessor.__init__ </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Inicializa o processador híbrido com configurações otimizadas. </p>
+<dl class="section return"><dt>Retorna</dt><dd>None Não retorna valor, configura instância </dd></dl>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Documentação das funções</h2>
+<a id="a39c112b3645e39dfd9a108574401c542" name="a39c112b3645e39dfd9a108574401c542"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39c112b3645e39dfd9a108574401c542">&#9670;&#160;</a></span>_generate_fallback_summary()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"> str document_processor.HybridDocumentProcessor._generate_fallback_summary </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gera resumo básico quando o Groq falha ou não está disponível. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">text</td><td>(str) Texto do documento </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(str) Resumo estruturado básico </dd></dl>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a39c112b3645e39dfd9a108574401c542_icgraph.svg" width="100%" height="452"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a48464728a5412353a2f3e5b9c06e9ab0" name="a48464728a5412353a2f3e5b9c06e9ab0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48464728a5412353a2f3e5b9c06e9ab0">&#9670;&#160;</a></span>_manual_chunking()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"> List[Dict[str, Any]] document_processor.HybridDocumentProcessor._manual_chunking </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Chunking manual de backup com configurações otimizadas. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">text</td><td>(str) Texto a ser dividido </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(List[Dict[str, Any]]) Lista de chunks criados manualmente </dd></dl>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a48464728a5412353a2f3e5b9c06e9ab0_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="a05f074e51c818fcc4498e8e5551489b5" name="a05f074e51c818fcc4498e8e5551489b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a05f074e51c818fcc4498e8e5551489b5">&#9670;&#160;</a></span>batch_generate_embeddings()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> List[List[float]] document_processor.HybridDocumentProcessor.batch_generate_embeddings </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">List[str]</td>          <td class="paramname"><span class="paramname"><em>contents</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gera embeddings em lote otimizado para alta performance. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">contents</td><td>(List[str]) Lista de textos para gerar embeddings </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(List[List[float]]) Lista de embeddings vetoriais </dd></dl>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a05f074e51c818fcc4498e8e5551489b5_icgraph.svg" width="434" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="aa0b9d84a7970b5d138a1eebdd0f42dc2" name="aa0b9d84a7970b5d138a1eebdd0f42dc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0b9d84a7970b5d138a1eebdd0f42dc2">&#9670;&#160;</a></span>create_smart_chunks()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> List[Dict[str, Any]] document_processor.HybridDocumentProcessor.create_smart_chunks </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Cria chunks inteligentes usando LangChain para melhor preservação de contexto. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">text</td><td>(str) Texto completo a ser dividido </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo para metadados </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(List[Dict[str, Any]]) Lista de chunks com metadados </dd></dl>
+<div class="dynheader">
+Grafo de chamadas desta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_aa0b9d84a7970b5d138a1eebdd0f42dc2_cgraph.svg" width="436" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_aa0b9d84a7970b5d138a1eebdd0f42dc2_icgraph.svg" width="434" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a699cc06046cbda8e6a079960e3f35d08" name="a699cc06046cbda8e6a079960e3f35d08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a699cc06046cbda8e6a079960e3f35d08">&#9670;&#160;</a></span>extract_text_from_pdf()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> str document_processor.HybridDocumentProcessor.extract_text_from_pdf </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>file_path</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Extrai texto completo de um arquivo PDF. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">file_path</td><td>(str) Caminho para o arquivo PDF </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(str) Texto extraído do PDF com separadores de página </dd></dl>
+<div class="dynheader">
+Grafo de chamadas desta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a699cc06046cbda8e6a079960e3f35d08_cgraph.svg" width="444" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a699cc06046cbda8e6a079960e3f35d08_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a id="aad81b704a84a0ce339a2560228700c77" name="aad81b704a84a0ce339a2560228700c77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad81b704a84a0ce339a2560228700c77">&#9670;&#160;</a></span>generate_document_summary()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> str document_processor.HybridDocumentProcessor.generate_document_summary </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gera resumo do documento usando Groq LLM com fallback robusto. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">text</td><td>(str) Texto completo do documento </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo para contexto </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(str) Resumo estruturado do documento </dd></dl>
+<div class="dynheader">
+Grafo de chamadas desta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_aad81b704a84a0ce339a2560228700c77_cgraph.svg" width="455" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_aad81b704a84a0ce339a2560228700c77_icgraph.svg" width="444" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a1d7a46a2add4076b7c6be452a5c37649" name="a1d7a46a2add4076b7c6be452a5c37649"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d7a46a2add4076b7c6be452a5c37649">&#9670;&#160;</a></span>optimized_pinecone_insert()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> Dict[str, Any] document_processor.HybridDocumentProcessor.optimized_pinecone_insert </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">List[Dict]</td>          <td class="paramname"><span class="paramname"><em>chunks</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">List[List[float]]</td>          <td class="paramname"><span class="paramname"><em>embeddings</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>summary</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Inserção otimizada no Pinecone com controle de qualidade. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">chunks</td><td>(List[Dict]) Lista de chunks com metadados </td></tr>
+    <tr><td class="paramname">embeddings</td><td>(List[List[float]]) Lista de embeddings correspondentes </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo </td></tr>
+    <tr><td class="paramname">summary</td><td>(str) Resumo do documento </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(Dict[str, Any]) Resultado da inserção com métricas </dd></dl>
+<div class="dynheader">
+Grafo de chamadas desta função:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a1d7a46a2add4076b7c6be452a5c37649_cgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+<div class="dynheader">
+Este é o diagrama das funções que utilizam esta função:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_a1d7a46a2add4076b7c6be452a5c37649_icgraph.svg" width="450" height="70"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="aa270b12f462b4526db040aaef0b00a13" name="aa270b12f462b4526db040aaef0b00a13"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa270b12f462b4526db040aaef0b00a13">&#9670;&#160;</a></span>process_pdf_hybrid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> Dict[str, Any] document_processor.HybridDocumentProcessor.process_pdf_hybrid </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>file_path</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação. </p>
+<dl class="params"><dt>Parâmetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">file_path</td><td>(str) Caminho para o arquivo PDF </td></tr>
+    <tr><td class="paramname">filename</td><td>(str) Nome do arquivo </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Retorna</dt><dd>(Dict[str, Any]) Resultado completo do processamento com métricas </dd></dl>
+<div class="dynheader">
+Grafo de chamadas desta função:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="classdocument__processor_1_1_hybrid_document_processor_aa270b12f462b4526db040aaef0b00a13_cgraph.svg" width="100%" height="545"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Documentação dos dados membro</h2>
+<a id="ab65d71f0e7afbcea0b98fff9dce82c21" name="ab65d71f0e7afbcea0b98fff9dce82c21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab65d71f0e7afbcea0b98fff9dce82c21">&#9670;&#160;</a></span>_model</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">document_processor.HybridDocumentProcessor._model</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Valor inicial:</b><div class="fragment"><div class="line">=  SentenceTransformer(</div>
+<div class="line">                    model_name,</div>
+<div class="line">                    device=<span class="stringliteral">&#39;cpu&#39;</span>,</div>
+<div class="line">                    trust_remote_code=<span class="keyword">False</span></div>
+<div class="line">                )</div>
+</div><!-- fragment -->
+</div>
+</div>
+<hr/>A documentação para esta classe foi gerada a partir do seguinte ficheiro:<ul>
+<li><a class="el" href="document__processor_8py.html">document_processor.py</a></li>
+</ul>
+</div><!-- contents -->
+</div><!-- doc-content -->
+<div id="page-nav" class="page-nav-panel">
+<div id="page-nav-resize-handle"></div>
+<div id="page-nav-tree">
+<div id="page-nav-contents">
+</div><!-- page-nav-contents -->
+</div><!-- page-nav-tree -->
+</div><!-- page-nav -->
+</div><!-- container -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><b>document_processor</b></li><li class="navelem"><a href="classdocument__processor_1_1_hybrid_document_processor.html">HybridDocumentProcessor</a></li>
+    <li class="footer">Gerado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
+  </ul>
+</div>
+</body>
+</html>

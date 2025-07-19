@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: AdminView.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: AdminView.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file AdminView.js
+ * @brief Componente principal da interface administrativa com gerenciamento de documentos e usuários
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import AdminRequestsPanel from '../AdminRequestsPanel/AdminRequestsPanel';
+import AdminManagementPanel from '../AdminManagementPanel/AdminManagementPanel';
+import { 
+  Shield, 
+  LogOut, 
+  FileText, 
+  Download, 
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  X,
+  Save,
+  RefreshCw,
+  Users
+} from 'lucide-react';
+import './AdminView.css';
+
+/**
+ * Componente principal da interface administrativa
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {Object} props.user - Dados do usuário administrador
+ * @param {string} props.user.email - Email do usuário
+ * @param {boolean} props.user.isAdmin - Se o usuário é administrador
+ * @param {Function} props.setCurrentView - Função para alterar a view atual
+ * @param {Function} props.handleLogout - Função para realizar logout
+ * @returns {JSX.Element} Componente renderizado da interface administrativa
+ * 
+ * @example
+ * &lt;AdminView
+ *   user={{email: "admin@ufma.br", isAdmin: true}}
+ *   setCurrentView={setView}
+ *   handleLogout={logout}
+ * />
+ */
+const AdminView = ({
+  user,
+  setCurrentView,
+  handleLogout
+}) => {
+  // Estados para controle de upload
+  /** @type {number} Progresso do upload (0-100) */
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  /** @type {boolean} Estado de upload em andamento */
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // Estados gerais da aplicação
+  /** @type {boolean} Estado de carregamento dos documentos */
+  const [isLoading, setIsLoading] = useState(true);
+  
+  /** @type {Array&lt;Object>} Lista de documentos do sistema */
+  const [documents, setDocuments] = useState([]);
+  
+  // Estados para edição de documentos
+  /** @type {Object|null} Documento em modo de edição */
+  const [editingDocument, setEditingDocument] = useState(null);
+  
+  // Estados para modal de adição de documentos
+  /** @type {boolean} Controle de exibição do modal de adição */
+  const [showAddModal, setShowAddModal] = useState(false);
+  
+  /** @type {Object} Dados do novo documento a ser adicionado */
+  const [newDocument, setNewDocument] = useState({
+    title: '',
+    version: '',
+    file: null
+  });
+
+  /** @type {string} Seção ativa da interface ('documents', 'requests', 'admin-management') */
+  const [activeSection, setActiveSection] = useState('documents');
+
+  /**
+   * Busca lista de documentos do backend
+   * @async
+   * @function fetchDocuments
+   * @returns {Promise&lt;void>}
+   */
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get("http://localhost:8000/api/admin/documents");
+      // Formata os dados recebidos do backend para o formato usado no frontend
+      const formattedDocs = response.data.map(doc => ({
+        id: doc.id,
+        title: doc.original_name,
+        version: doc.version || 'v1.0',
+        lastUpdated: new Date(doc.saved_at).toLocaleDateString(),
+        isActive: true,
+        size: `${(doc.size / (1024 * 1024)).toFixed(1)} MB`,
+        downloadUrl: `http://localhost:8000/api/admin/download/${doc.id}`
+      }));
+      setDocuments(formattedDocs);
+    } catch (error) {
+      console.error("Erro ao carregar documentos:", error);
+      alert("Erro ao carregar documentos");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Hook de efeito para carregar documentos quando a seção de documentos é ativada
+   */
+  useEffect(() => {
+    if (activeSection === 'documents') {
+      fetchDocuments();
+    }
+  }, [activeSection]);
+
+  /**
+   * Realiza upload de arquivo PDF para o backend
+   * @async
+   * @function handleRealUpload
+   * @param {File} file - Arquivo PDF a ser enviado
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de upload ou validação
+   */
+  const handleRealUpload = async (file) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/admin/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          // Callback para mostrar progresso do upload
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(percentCompleted);
+          },
+        }
+      );
+
+      // Atualiza a lista de documentos após o upload bem-sucedido
+      await fetchDocuments();
+      setNewDocument({ title: '', version: '', file: null });
+      setShowAddModal(false);
+      alert("Documento enviado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error);
+      alert(`Erro: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  /**
+   * Manipula seleção de arquivo no input file
+   * @function handleFileSelect
+   * @param {Event} event - Evento de mudança do input file
+   * @returns {void}
+   */
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    // Valida se o arquivo é PDF
+    if (file &amp;&amp; file.type === 'application/pdf') {
+      setNewDocument(prev => ({ ...prev, file }));
+    } else {
+      alert('Por favor, selecione apenas arquivos PDF.');
+    }
+  };
+
+  /**
+   * Inicia processo de adição de novo documento
+   * @function handleAddDocument
+   * @returns {void}
+   */
+  const handleAddDocument = () => {
+    if (!newDocument.file) {
+      alert('Por favor, selecione um arquivo.');
+      return;
+    }
+    handleRealUpload(newDocument.file);
+  };
+
+  /**
+   * Inicia modo de edição para um documento específico
+   * @function handleEditDocument
+   * @param {string|number} docId - ID do documento a ser editado
+   * @returns {void}
+   */
+  const handleEditDocument = (docId) => {
+    const doc = documents.find(d => d.id === docId);
+    setEditingDocument({ ...doc });
+  };
+
+  /**
+   * Salva alterações na edição do documento (apenas local)
+   * @function handleSaveEdit
+   * @returns {void}
+   * @note Esta função apenas atualiza o estado local, não persiste no backend
+   */
+  const handleSaveEdit = () => {
+    setDocuments(prev => 
+      prev.map(doc => 
+        doc.id === editingDocument.id 
+          ? { ...editingDocument, lastUpdated: new Date().toLocaleDateString() }
+          : doc
+      )
+    );
+    setEditingDocument(null);
+  };
+
+  /**
+   * Cancela modo de edição sem salvar alterações
+   * @function handleCancelEdit
+   * @returns {void}
+   */
+  const handleCancelEdit = () => {
+    setEditingDocument(null);
+  };
+
+  /**
+   * Remove documento do sistema via API
+   * @async
+   * @function handleRemoveDocument
+   * @param {string|number} docId - ID do documento a ser removido
+   * @returns {Promise&lt;void>}
+   */
+  const handleRemoveDocument = async (docId) => {
+    if (window.confirm('Tem certeza que deseja remover este documento?')) {
+      try {
+        await axios.delete(`http://localhost:8000/api/admin/document/${docId}`);
+        // Remove o documento da lista local após sucesso no backend
+        setDocuments(prev => prev.filter(doc => doc.id !== docId));
+      } catch (error) {
+        console.error("Erro ao remover documento:", error);
+        alert("Erro ao remover documento");
+      }
+    }
+  };
+
+  /**
+   * Faz download do documento abrindo em nova aba
+   * @function handleDownloadDocument
+   * @param {Object} doc - Objeto do documento com URL de download
+   * @param {string} doc.downloadUrl - URL para download do documento
+   * @returns {void}
+   */
+  const handleDownloadDocument = (doc) => {
+    window.open(doc.downloadUrl, '_blank');
+  };
+
+  /**
+   * Alterna status ativo/inativo do documento (apenas local)
+   * @function toggleDocumentStatus
+   * @param {string|number} docId - ID do documento
+   * @returns {void}
+   * @note Esta função apenas atualiza o estado local, não persiste no backend
+   */
+  const toggleDocumentStatus = (docId) => {
+    setDocuments(prev =>
+      prev.map(doc =>
+        doc.id === docId
+          ? { ...doc, isActive: !doc.isActive, lastUpdated: new Date().toLocaleDateString() }
+          : doc
+      )
+    );
+  };
+
+  /**
+   * Renderiza conteúdo baseado na seção ativa
+   * @function renderSectionContent
+   * @returns {JSX.Element} Componente da seção ativa
+   */
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'requests':
+        return &lt;AdminRequestsPanel API_BASE_URL="http://localhost:8000" />;
+      
+      case 'admin-management':
+        return &lt;AdminManagementPanel API_BASE_URL="http://localhost:8000" currentUser={user} />;
+      
+      case 'documents':
+      default:
+        return (
+          &lt;div className="admin-section">
+            {/* Cabeçalho da seção de documentos */}
+            &lt;div className="admin-section-header">
+              &lt;h2 className="admin-section-title">
+                &lt;FileText className="admin-section-icon" />
+                Gerenciar Documentos
+                &lt;div className="admin-badge">
+                  👤 Administrador: {user?.email}
+                &lt;/div>
+              &lt;/h2>
+              &lt;button 
+                onClick={() => setShowAddModal(true)}
+                className="add-document-button"
+                disabled={isLoading}
+              >
+                &lt;Plus size={16} />
+                Adicionar Documento
+              &lt;/button>
+            &lt;/div>
+            
+            {/* Área de conteúdo: loading ou lista de documentos */}
+            {isLoading ? (
+              &lt;div className="loading-container">
+                &lt;div className="loading-spinner">&lt;/div>
+                &lt;p>Carregando documentos...&lt;/p>
+              &lt;/div>
+            ) : (
+              &lt;div className="admin-documents">
+                {/* Estado vazio quando não há documentos */}
+                {documents.length === 0 ? (
+                  &lt;div className="empty-state">
+                    &lt;FileText size={48} className="empty-icon" />
+                    &lt;p>Nenhum documento encontrado&lt;/p>
+                  &lt;/div>
+                ) : (
+                  // Lista de documentos
+                  documents.map((doc) => (
+                    &lt;div key={doc.id} className={`document-card ${!doc.isActive ? 'inactive' : ''}`}>
+                      {/* Informações do documento */}
+                      &lt;div className="document-info">
+                        &lt;div className="document-icon">
+                          &lt;FileText size={24} />
+                        &lt;/div>
+                        &lt;div className="document-details">
+                          {/* Modo de edição vs modo de visualização */}
+                          {editingDocument?.id === doc.id ? (
+                            &lt;div className="edit-form">
+                              &lt;input
+                                type="text"
+                                value={editingDocument.title}
+                                onChange={(e) => setEditingDocument({...editingDocument, title: e.target.value})}
+                                className="edit-input"
+                                placeholder="Título do documento"
+                              />
+                              &lt;input
+                                type="text"
+                                value={editingDocument.version}
+                                onChange={(e) => setEditingDocument({...editingDocument, version: e.target.value})}
+                                className="edit-input"
+                                placeholder="Versão"
+                              />
+                            &lt;/div>
+                          ) : (
+                            &lt;>
+                              &lt;h3 className="document-title">{doc.title}&lt;/h3>
+                              &lt;p className="document-version">Versão: {doc.version}&lt;/p>
+                            &lt;/>
+                          )}
+                          &lt;p className="document-updated">Última atualização: {doc.lastUpdated}&lt;/p>
+                          &lt;p className="document-size">Tamanho: {doc.size}&lt;/p>
+                          {/* Toggle de status ativo/inativo */}
+                          &lt;div className="document-status">
+                            &lt;button 
+                              onClick={() => toggleDocumentStatus(doc.id)}
+                              className={`status-toggle ${doc.isActive ? 'status-active' : 'status-inactive'}`}
+                            >
+                              &lt;Eye className="status-icon" />
+                              &lt;span className="status-text">
+                                {doc.isActive ? 'Ativo' : 'Inativo'}
+                              &lt;/span>
+                            &lt;/button>
+                          &lt;/div>
+                        &lt;/div>
+                      &lt;/div>
+                      
+                      {/* Ações do documento */}
+                      &lt;div className="document-actions">
+                        {/* Botões para modo de edição */}
+                        {editingDocument?.id === doc.id ? (
+                          &lt;>
+                            &lt;button 
+                              onClick={handleSaveEdit}
+                              className="action-button save-button"
+                            >
+                              &lt;Save className="action-icon" />
+                              Salvar
+                            &lt;/button>
+                            &lt;button 
+                              onClick={handleCancelEdit}
+                              className="action-button cancel-button"
+                            >
+                              &lt;X className="action-icon" />
+                              Cancelar
+                            &lt;/button>
+                          &lt;/>
+                        ) : (
+                          // Botões para modo normal
+                          &lt;>
+                            &lt;button 
+                              onClick={() => handleEditDocument(doc.id)}
+                              className="action-button edit-button"
+                            >
+                              &lt;Edit className="action-icon" />
+                              Editar
+                            &lt;/button>
+                            &lt;button 
+                              onClick={() => handleDownloadDocument(doc)}
+                              className="action-button download-button"
+                            >
+                              &lt;Download className="action-icon" />
+                              Baixar
+                            &lt;/button>
+                            &lt;button 
+                              onClick={() => handleRemoveDocument(doc.id)}
+                              className="action-button remove-button"
+                            >
+                              &lt;Trash2 className="action-icon" />
+                              Remover
+                            &lt;/button>
+                          &lt;/>
+                        )}
+                      &lt;/div>
+                    &lt;/div>
+                  ))
+                )}
+              &lt;/div>
+            )}
+          &lt;/div>
+        );
+    }
+  };
+
+  return (
+    &lt;div className="admin-container">
+      {/* Cabeçalho da página administrativa */}
+      &lt;header className="admin-header">
+        &lt;div className="admin-header-content">
+          &lt;div className="admin-header-left">
+            &lt;button
+              onClick={() => setCurrentView('chat')}
+              className="back-button"
+            >
+              ← Voltar ao Chat
+            &lt;/button>
+            &lt;h1 className="admin-title">
+              &lt;Shield className="admin-icon" />
+              Painel Administrativo
+            &lt;/h1>
+          &lt;/div>
+          &lt;div className="admin-header-right">
+            {/* Botões de navegação entre seções */}
+            &lt;div className="section-nav">
+              &lt;button
+                onClick={() => setActiveSection('documents')}
+                className={`nav-button ${activeSection === 'documents' ? 'active' : ''}`}
+                title="Gerenciar Documentos"
+              >
+                &lt;FileText size={18} />
+                Documentos
+              &lt;/button>
+              &lt;button
+                onClick={() => setActiveSection('requests')}
+                className={`nav-button ${activeSection === 'requests' ? 'active' : ''}`}
+                title="Solicitações de Admin"
+              >
+                &lt;Shield size={18} />
+                Solicitações
+              &lt;/button>
+              {/* Botão para gerenciamento de admins (apenas super admin) */}
+              {user?.email === 'admin@ufma.br' &amp;&amp; (
+                &lt;button
+                  onClick={() => setActiveSection('admin-management')}
+                  className={`nav-button ${activeSection === 'admin-management' ? 'active' : ''}`}
+                  title="Gerenciar Administradores"
+                >
+                  &lt;Users size={18} />
+                  Admins
+                &lt;/button>
+              )}
+            &lt;/div>
+            
+            {/* Botão para atualizar lista de documentos */}
+            &lt;button
+              onClick={fetchDocuments}
+              className="refresh-button"
+              disabled={isLoading}
+            >
+              &lt;RefreshCw size={18} className={isLoading ? "spin" : ""} />
+              Atualizar
+            &lt;/button>
+            &lt;button
+              onClick={handleLogout}
+              className="header-button"
+            >
+              &lt;LogOut size={20} />
+            &lt;/button>
+          &lt;/div>
+        &lt;/div>
+      &lt;/header>
+
+      {/* Conteúdo principal da página */}
+      &lt;div className="admin-content">
+        {/* Renderiza conteúdo baseado na seção ativa */}
+        {renderSectionContent()}
+      &lt;/div>
+
+      {/* Modal para adicionar novo documento */}
+      {showAddModal &amp;&amp; (
+        &lt;div className="modal-overlay">
+          &lt;div className="modal-content">
+            {/* Cabeçalho do modal */}
+            &lt;div className="modal-header">
+              &lt;h3 className="modal-title">Adicionar Novo Documento&lt;/h3>
+              &lt;button 
+                onClick={() => setShowAddModal(false)}
+                className="modal-close"
+                disabled={isUploading}
+              >
+                &lt;X size={20} />
+              &lt;/button>
+            &lt;/div>
+            
+            {/* Corpo do modal com formulário */}
+            &lt;div className="modal-body">
+              &lt;div className="form-group">
+                &lt;label className="form-label">Título do Documento (opcional)&lt;/label>
+                &lt;input
+                  type="text"
+                  value={newDocument.title}
+                  onChange={(e) => setNewDocument({...newDocument, title: e.target.value})}
+                  className="form-input"
+                  placeholder="Ex: RESOLUÇÃO Nº 1893-CONSEPE"
+                />
+              &lt;/div>
+              
+              &lt;div className="form-group">
+                &lt;label className="form-label">Versão (opcional)&lt;/label>
+                &lt;input
+                  type="text"
+                  value={newDocument.version}
+                  onChange={(e) => setNewDocument({...newDocument, version: e.target.value})}
+                  className="form-input"
+                  placeholder="Ex: v1.0 (01/01/2024)"
+                />
+              &lt;/div>
+              
+              {/* Input para seleção de arquivo */}
+              &lt;div className="form-group">
+                &lt;label className="form-label">Arquivo PDF *&lt;/label>
+                &lt;input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileSelect}
+                  className="file-input"
+                  required
+                />
+                {newDocument.file &amp;&amp; (
+                  &lt;p className="file-selected">
+                    Arquivo selecionado: {newDocument.file.name}
+                  &lt;/p>
+                )}
+              &lt;/div>
+
+              {/* Barra de progresso do upload */}
+              {isUploading &amp;&amp; (
+                &lt;div className="upload-progress">
+                  &lt;div className="progress-bar">
+                    &lt;div 
+                      className="progress-fill"
+                      style={{ width: `${uploadProgress}%` }}
+                    >&lt;/div>
+                  &lt;/div>
+                  &lt;p className="progress-text">Enviando... {uploadProgress}%&lt;/p>
+                &lt;/div>
+              )}
+            &lt;/div>
+            
+            {/* Rodapé do modal com botões de ação */}
+            &lt;div className="modal-footer">
+              &lt;button 
+                onClick={() => setShowAddModal(false)}
+                className="cancel-button"
+                disabled={isUploading}
+              >
+                Cancelar
+              &lt;/button>
+              &lt;button 
+                onClick={handleAddDocument}
+                className="primary-button"
+                disabled={!newDocument.file || isUploading}
+              >
+                &lt;Plus className="button-icon" />
+                {isUploading ? 'Enviando...' : 'Enviar Documento'}
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+        &lt;/div>
+      )}
+    &lt;/div>
+  );
+};
+
+export default AdminView;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

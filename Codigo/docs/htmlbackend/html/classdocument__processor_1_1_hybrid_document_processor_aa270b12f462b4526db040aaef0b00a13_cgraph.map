@@ -1,0 +1,19 @@
+<map id="document_processor.HybridDocumentProcessor.process_pdf_hybrid" name="document_processor.HybridDocumentProcessor.process_pdf_hybrid">
+<area shape="rect" id="Node000001" title="Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação." alt="" coords="5,117,196,176"/>
+<area shape="rect" id="Node000002" href="$classdocument__processor_1_1_hybrid_document_processor.html#a39c112b3645e39dfd9a108574401c542" title="Gera resumo básico quando o Groq falha ou não está disponível." alt="" coords="734,180,936,239"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,115,173,63,206,39,243,20,297,5,342,4,444,20,515,28,570,37,623,53,688,83,747,122,797,166,794,170,744,127,685,88,621,58,569,43,514,34,444,25,342,9,298,10,245,25,209,43,177,67,127,119"/>
+<area shape="rect" id="Node000003" href="$classdocument__processor_1_1_hybrid_document_processor.html#a05f074e51c818fcc4498e8e5551489b5" title="Gera embeddings em lote otimizado para alta performance." alt="" coords="252,35,436,93"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="188,114,240,96,242,101,190,119"/>
+<area shape="rect" id="Node000004" href="$classdocument__processor_1_1_hybrid_document_processor.html#aa0b9d84a7970b5d138a1eebdd0f42dc2" title="Cria chunks inteligentes usando LangChain para melhor preservação de contexto." alt="" coords="252,117,436,176"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="196,144,236,144,236,149,196,149"/>
+<area shape="rect" id="Node000006" href="$classdocument__processor_1_1_hybrid_document_processor.html#aad81b704a84a0ce339a2560228700c77" title="Gera resumo do documento usando Groq LLM com fallback robusto." alt="" coords="492,180,686,239"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="194,174,244,185,364,200,477,206,476,211,363,205,243,190,193,179"/>
+<area shape="rect" id="Node000007" href="$classdocument__processor_1_1_hybrid_document_processor.html#a1d7a46a2add4076b7c6be452a5c37649" title="Inserção otimizada no Pinecone com controle de qualidade." alt="" coords="244,259,444,317"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="152,174,245,230,277,248,275,253,242,234,150,179"/>
+<area shape="rect" id="Node000005" href="$classdocument__processor_1_1_hybrid_document_processor.html#a48464728a5412353a2f3e5b9c06e9ab0" title="Chunking manual de backup com configurações otimizadas." alt="" coords="492,97,686,156"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="436,136,477,133,477,138,437,142"/>
+<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="687,207,718,207,718,212,687,212"/>
+<area shape="rect" id="Node000008" href="$classdocument__processor_1_1_hybrid_document_processor.html#a699cc06046cbda8e6a079960e3f35d08" title="Extrai texto completo de um arquivo PDF." alt="" coords="497,263,681,321"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="445,287,481,287,481,293,445,292"/>
+<area shape="poly" id="edge9_Node000008_Node000002" title=" " alt="" coords="678,259,730,242,732,247,679,264"/>
+</map>
