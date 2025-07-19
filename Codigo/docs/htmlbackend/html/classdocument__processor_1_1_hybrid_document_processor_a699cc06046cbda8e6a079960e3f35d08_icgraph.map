@@ -1,0 +1,7 @@
+<map id="document_processor.HybridDocumentProcessor.extract_text_from_pdf" name="document_processor.HybridDocumentProcessor.extract_text_from_pdf">
+<area shape="rect" id="Node000001" title="Extrai texto completo de um arquivo PDF." alt="" coords="492,5,676,64"/>
+<area shape="rect" id="Node000002" href="$classdocument__processor_1_1_hybrid_document_processor.html#a1d7a46a2add4076b7c6be452a5c37649" title="Inserção otimizada no Pinecone com controle de qualidade." alt="" coords="244,5,444,64"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="477,37,444,37,444,32,477,32"/>
+<area shape="rect" id="Node000003" href="$classdocument__processor_1_1_hybrid_document_processor.html#aa270b12f462b4526db040aaef0b00a13" title="Pipeline completo de processamento híbrido: extração, resumo, chunking e indexação." alt="" coords="5,5,196,64"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="228,37,196,37,196,32,228,32"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="document_processor.HybridDocumentProcessor.optimized_pinecone_insert" name="document_processor.HybridDocumentProcessor.optimized_pinecone_insert">
+<area shape="rect" id="Node000001" title="Inserção otimizada no Pinecone com controle de qualidade." alt="" coords="5,5,206,64"/>
+<area shape="rect" id="Node000002" href="$classdocument__processor_1_1_hybrid_document_processor.html#a699cc06046cbda8e6a079960e3f35d08" title="Extrai texto completo de um arquivo PDF." alt="" coords="254,5,438,64"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="206,32,238,32,238,37,206,37"/>
+<area shape="rect" id="Node000003" href="$classdocument__processor_1_1_hybrid_document_processor.html#a39c112b3645e39dfd9a108574401c542" title="Gera resumo básico quando o Groq falha ou não está disponível." alt="" coords="486,5,687,64"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="439,32,470,32,470,37,439,37"/>
+</map>

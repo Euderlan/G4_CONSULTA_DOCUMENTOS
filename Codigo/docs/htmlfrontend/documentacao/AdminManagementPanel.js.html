@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: AdminManagementPanel.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: AdminManagementPanel.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file AdminManagementPanel.js
+ * @brief Componente React para gerenciamento de administradores do sistema
+ * @author Seu Nome &lt;seu.email@example.com>
+ */
+
+import React, { useState, useEffect } from 'react';
+import { 
+  Shield, 
+  Users, 
+  UserPlus, 
+  UserMinus, 
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Crown,
+  Activity,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Trash2,
+  UserCheck
+} from 'lucide-react';
+import './AdminManagementPanel.css';
+
+/**
+ * Componente principal para gerenciamento de administradores
+ * 
+ * @component
+ * @param {Object} props - Propriedades do componente
+ * @param {string} props.API_BASE_URL - URL base da API do backend
+ * @param {Object} props.currentUser - Dados do usuário atualmente logado
+ * @param {string} props.currentUser.email - Email do usuário atual
+ * @param {boolean} props.currentUser.is_admin - Se o usuário atual é administrador
+ * @returns {JSX.Element} Componente renderizado do painel de gerenciamento
+ * 
+ * @example
+ * &lt;AdminManagementPanel 
+ *   API_BASE_URL="http://localhost:8000" 
+ *   currentUser={{email: "admin@ufma.br", is_admin: true}} 
+ * />
+ */
+const AdminManagementPanel = ({ API_BASE_URL, currentUser }) => {
+  // Estados do componente
+  /** @type {Array&lt;Object>} Lista de administradores do sistema */
+  const [admins, setAdmins] = useState([]);
+  
+  /** @type {Array&lt;Object>} Lista de usuários não-administradores */
+  const [nonAdminUsers, setNonAdminUsers] = useState([]);
+  
+  /** @type {Array&lt;Object>} Log de atividades administrativas */
+  const [activityLog, setActivityLog] = useState([]);
+  
+  /** @type {boolean} Estado de carregamento dos dados */
+  const [isLoading, setIsLoading] = useState(true);
+  
+  /** @type {string} Aba ativa do painel ('admins', 'promote', 'activity') */
+  const [activeTab, setActiveTab] = useState('admins');
+  
+  /** @type {Object|null} Usuário selecionado para ação */
+  const [selectedUser, setSelectedUser] = useState(null);
+  
+  /** @type {boolean} Controle de exibição do modal */
+  const [showModal, setShowModal] = useState(false);
+  
+  /** @type {string} Tipo de modal ('promote', 'suspend', 'remove', 'reactivate') */
+  const [modalType, setModalType] = useState('');
+  
+  /** @type {string} Justificativa para a ação administrativa */
+  const [actionReason, setActionReason] = useState('');
+  
+  /** @type {boolean} Estado de processamento de ação */
+  const [processingAction, setProcessingAction] = useState(false);
+
+  /**
+   * Hook de efeito para carregar dados ao montar o componente
+   */
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  /**
+   * Carrega todos os dados necessários para o painel
+   * @async
+   * @function loadAllData
+   * @returns {Promise&lt;void>}
+   */
+  const loadAllData = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        loadAdmins(),
+        loadNonAdminUsers(),
+        loadActivityLog()
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Carrega lista de administradores do sistema
+   * @async
+   * @function loadAdmins
+   * @returns {Promise&lt;void>}
+   */
+  const loadAdmins = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-management/admins`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAdmins(data.admins || []);
+      } else {
+        console.error('Erro ao carregar admins');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar admins:', error);
+    }
+  };
+
+  /**
+   * Carrega lista de usuários não-administradores
+   * @async
+   * @function loadNonAdminUsers
+   * @returns {Promise&lt;void>}
+   */
+  const loadNonAdminUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-management/users/non-admin`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNonAdminUsers(data.users || []);
+      } else {
+        console.error('Erro ao carregar usuários não-admin');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar usuários não-admin:', error);
+    }
+  };
+
+  /**
+   * Carrega log de atividades administrativas
+   * @async
+   * @function loadActivityLog
+   * @returns {Promise&lt;void>}
+   */
+  const loadActivityLog = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-management/activity-log`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setActivityLog(data.activities || []);
+      } else {
+        console.error('Erro ao carregar log de atividades');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar log:', error);
+    }
+  };
+
+  /**
+   * Abre modal para diferentes tipos de ações
+   * @function openModal
+   * @param {string} type - Tipo de modal ('promote', 'suspend', 'remove', 'reactivate')
+   * @param {Object|null} [user=null] - Usuário selecionado para a ação
+   * @returns {void}
+   */
+  const openModal = (type, user = null) => {
+    setModalType(type);
+    setSelectedUser(user);
+    setActionReason('');
+    setShowModal(true);
+  };
+
+  /**
+   * Fecha o modal e limpa os estados relacionados
+   * @function closeModal
+   * @returns {void}
+   */
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+    setActionReason('');
+    setModalType('');
+  };
+
+  /**
+   * Promove um usuário para administrador
+   * @async
+   * @function promoteUser
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de conexão ou validação
+   */
+  const promoteUser = async () => {
+    if (!selectedUser || !actionReason.trim()) {
+      alert('Por favor, forneça uma justificativa para a promoção');
+      return;
+    }
+
+    setProcessingAction(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-management/promote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_email: selectedUser.email,
+          reason: actionReason.trim()
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(` ${selectedUser.name} foi promovido a administrador com sucesso!`);
+        closeModal();
+        await loadAllData();
+      } else {
+        alert('Erro: ' + (data.detail || 'Falha ao promover usuário'));
+      }
+    } catch (error) {
+      console.error('Erro ao promover usuário:', error);
+      alert('Erro de conexão. Tente novamente.');
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  /**
+   * Gerencia ações sobre administradores (suspender, reativar, remover)
+   * @async
+   * @function manageAdmin
+   * @param {string} action - Ação a ser executada ('suspend', 'reactivate', 'remove')
+   * @returns {Promise&lt;void>}
+   * @throws {Error} Erro de conexão ou validação
+   */
+  const manageAdmin = async (action) => {
+    if (!selectedUser) return;
+
+    if ((action === 'suspend' || action === 'remove') &amp;&amp; !actionReason.trim()) {
+      alert('Por favor, forneça uma justificativa para esta ação');
+      return;
+    }
+
+    setProcessingAction(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin-management/manage/${selectedUser.email}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: action,
+          reason: actionReason.trim() || null
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        let successMessage = '';
+        switch (action) {
+          case 'suspend':
+            successMessage = `${selectedUser.name} foi suspenso com sucesso`;
+            break;
+          case 'reactivate':
+            successMessage = `${selectedUser.name} foi reativado com sucesso`;
+            break;
+          case 'remove':
+            successMessage = `Privilégios de admin removidos de ${selectedUser.name}`;
+            break;
+        }
+        
+        alert(` ${successMessage}!`);
+        closeModal();
+        await loadAllData();
+      } else {
+        alert('Erro: ' + (data.detail || 'Falha ao executar ação'));
+      }
+    } catch (error) {
+      console.error('Erro ao gerenciar admin:', error);
+      alert('Erro de conexão. Tente novamente.');
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  /**
+   * Retorna ícone apropriado para o status do administrador
+   * @function getStatusIcon
+   * @param {string} status - Status do administrador ('active', 'suspended')
+   * @param {string} adminType - Tipo de admin ('super', 'regular')
+   * @returns {JSX.Element} Ícone React correspondente ao status
+   */
+  const getStatusIcon = (status, adminType) => {
+    if (adminType === 'super') {
+      return &lt;Crown size={16} className="status-icon super" />;
+    }
+    
+    switch (status) {
+      case 'active': return &lt;CheckCircle size={16} className="status-icon active" />;
+      case 'suspended': return &lt;AlertTriangle size={16} className="status-icon suspended" />;
+      default: return &lt;XCircle size={16} className="status-icon inactive" />;
+    }
+  };
+
+  /**
+   * Retorna texto descritivo para o status do administrador
+   * @function getStatusText
+   * @param {string} status - Status do administrador
+   * @param {string} adminType - Tipo de admin
+   * @returns {string} Texto descritivo do status
+   */
+  const getStatusText = (status, adminType) => {
+    if (adminType === 'super') return 'Super Admin';
+    
+    switch (status) {
+      case 'active': return 'Ativo';
+      case 'suspended': return 'Suspenso';
+      default: return 'Inativo';
+    }
+  };
+
+  /**
+   * Retorna ícone apropriado para o tipo de atividade
+   * @function getActivityIcon
+   * @param {string} type - Tipo de atividade ('promotion', 'demotion', 'suspension', 'reactivation')
+   * @returns {JSX.Element} Ícone React correspondente à atividade
+   */
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'promotion': return &lt;UserPlus size={16} className="activity-icon promotion" />;
+      case 'demotion': return &lt;UserMinus size={16} className="activity-icon demotion" />;
+      case 'suspension': return &lt;EyeOff size={16} className="activity-icon suspension" />;
+      case 'reactivation': return &lt;Eye size={16} className="activity-icon reactivation" />;
+      default: return &lt;Activity size={16} className="activity-icon default" />;
+    }
+  };
+
+  /**
+   * Formata data e hora no padrão brasileiro
+   * @function formatDateTime
+   * @param {string} dateString - String de data em formato ISO
+   * @returns {string} Data formatada em pt-BR
+   * 
+   * @example
+   * formatDateTime("2024-01-15T10:30:00") // "15/01/2024, 10:30"
+   */
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  /**
+   * Verifica se o usuário atual é super administrador
+   * @type {boolean}
+   */
+  const isSuperAdmin = currentUser?.email === 'admin@ufma.br';
+
+  // Componente de acesso negado para usuários não autorizados
+  if (!isSuperAdmin) {
+    return (
+      &lt;div className="access-denied">
+        &lt;Shield size={48} />
+        &lt;h3>Acesso Negado&lt;/h3>
+        &lt;p>Apenas o administrador principal pode gerenciar outros administradores.&lt;/p>
+      &lt;/div>
+    );
+  }
+
+  // Componente de carregamento
+  if (isLoading) {
+    return (
+      &lt;div className="admin-management-loading">
+        &lt;div className="loading-spinner">&lt;/div>
+        &lt;p>Carregando gerenciamento de administradores...&lt;/p>
+      &lt;/div>
+    );
+  }
+
+  return (
+    &lt;div className="admin-management-panel">
+      {/* Header */}
+      &lt;div className="panel-header">
+        &lt;div className="panel-title">
+          &lt;Shield size={24} />
+          &lt;h2>Gerenciamento de Administradores&lt;/h2>
+        &lt;/div>
+        &lt;button 
+          onClick={loadAllData}
+          className="refresh-button"
+          disabled={isLoading}
+        >
+          &lt;RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+          Atualizar
+        &lt;/button>
+      &lt;/div>
+
+      {/* Tabs */}
+      &lt;div className="tabs-container">
+        &lt;button
+          onClick={() => setActiveTab('admins')}
+          className={`tab-button ${activeTab === 'admins' ? 'active' : ''}`}
+        >
+          &lt;Users size={16} />
+          Administradores ({admins.length})
+        &lt;/button>
+        &lt;button
+          onClick={() => setActiveTab('promote')}
+          className={`tab-button ${activeTab === 'promote' ? 'active' : ''}`}
+        >
+          &lt;UserPlus size={16} />
+          Promover Usuário ({nonAdminUsers.length})
+        &lt;/button>
+        &lt;button
+          onClick={() => setActiveTab('activity')}
+          className={`tab-button ${activeTab === 'activity' ? 'active' : ''}`}
+        >
+          &lt;Activity size={16} />
+          Log de Atividades ({activityLog.length})
+        &lt;/button>
+      &lt;/div>
+
+      {/* Content */}
+      &lt;div className="panel-content">
+        {/* Tab: Administradores */}
+        {activeTab === 'admins' &amp;&amp; (
+          &lt;div className="admins-tab">
+            {admins.length === 0 ? (
+              &lt;div className="empty-state">
+                &lt;Users size={48} />
+                &lt;h4>Nenhum administrador encontrado&lt;/h4>
+              &lt;/div>
+            ) : (
+              &lt;div className="admins-grid">
+                {admins.map((admin) => (
+                  &lt;div key={admin.id} className={`admin-card ${admin.status || 'active'}`}>
+                    &lt;div className="admin-header">
+                      &lt;div className="admin-info">
+                        &lt;h4>{admin.name}&lt;/h4>
+                        &lt;p>{admin.email}&lt;/p>
+                      &lt;/div>
+                      &lt;div className="admin-status">
+                        {getStatusIcon(admin.status, admin.admin_type)}
+                        &lt;span>{getStatusText(admin.status, admin.admin_type)}&lt;/span>
+                      &lt;/div>
+                    &lt;/div>
+                    
+                    &lt;div className="admin-details">
+                      &lt;div className="detail-item">
+                        &lt;span className="label">Criado em:&lt;/span>
+                        &lt;span className="value">{formatDateTime(admin.created_at)}&lt;/span>
+                      &lt;/div>
+                      {admin.promoted_at &amp;&amp; (
+                        &lt;div className="detail-item">
+                          &lt;span className="label">Promovido em:&lt;/span>
+                          &lt;span className="value">{formatDateTime(admin.promoted_at)}&lt;/span>
+                        &lt;/div>
+                      )}
+                      {admin.promoted_by &amp;&amp; (
+                        &lt;div className="detail-item">
+                          &lt;span className="label">Promovido por:&lt;/span>
+                          &lt;span className="value">{admin.promoted_by}&lt;/span>
+                        &lt;/div>
+                      )}
+                    &lt;/div>
+
+                    {/* Actions - apenas para admins regulares */}
+                    {admin.admin_type !== 'super' &amp;&amp; (
+                      &lt;div className="admin-actions">
+                        {admin.status === 'suspended' ? (
+                          &lt;button
+                            onClick={() => openModal('reactivate', admin)}
+                            className="action-button reactivate"
+                          >
+                            &lt;Eye size={14} />
+                            Reativar
+                          &lt;/button>
+                        ) : (
+                          &lt;button
+                            onClick={() => openModal('suspend', admin)}
+                            className="action-button suspend"
+                          >
+                            &lt;EyeOff size={14} />
+                            Suspender
+                          &lt;/button>
+                        )}
+                        &lt;button
+                          onClick={() => openModal('remove', admin)}
+                          className="action-button remove"
+                        >
+                          &lt;Trash2 size={14} />
+                          Remover Admin
+                        &lt;/button>
+                      &lt;/div>
+                    )}
+                  &lt;/div>
+                ))}
+              &lt;/div>
+            )}
+          &lt;/div>
+        )}
+
+        {/* Tab: Promover Usuário */}
+        {activeTab === 'promote' &amp;&amp; (
+          &lt;div className="promote-tab">
+            {nonAdminUsers.length === 0 ? (
+              &lt;div className="empty-state">
+                &lt;UserPlus size={48} />
+                &lt;h4>Nenhum usuário disponível para promoção&lt;/h4>
+                &lt;p>Todos os usuários cadastrados já são administradores.&lt;/p>
+              &lt;/div>
+            ) : (
+              &lt;div className="users-grid">
+                {nonAdminUsers.map((user) => (
+                  &lt;div key={user.id} className="user-card">
+                    &lt;div className="user-info">
+                      &lt;h4>{user.name}&lt;/h4>
+                      &lt;p>{user.email}&lt;/p>
+                      &lt;span className="user-created">
+                        Cadastrado em: {formatDateTime(user.created_at)}
+                      &lt;/span>
+                    &lt;/div>
+                    &lt;button
+                      onClick={() => openModal('promote', user)}
+                      className="promote-button"
+                    >
+                      &lt;UserCheck size={16} />
+                      Promover a Admin
+                    &lt;/button>
+                  &lt;/div>
+                ))}
+              &lt;/div>
+            )}
+          &lt;/div>
+        )}
+
+        {/* Tab: Log de Atividades */}
+        {activeTab === 'activity' &amp;&amp; (
+          &lt;div className="activity-tab">
+            {activityLog.length === 0 ? (
+              &lt;div className="empty-state">
+                &lt;Activity size={48} />
+                &lt;h4>Nenhuma atividade registrada&lt;/h4>
+                &lt;p>As atividades administrativas aparecerão aqui.&lt;/p>
+              &lt;/div>
+            ) : (
+              &lt;div className="activity-list">
+                {activityLog.map((activity, index) => (
+                  &lt;div key={index} className="activity-item">
+                    &lt;div className="activity-icon-container">
+                      {getActivityIcon(activity.type)}
+                    &lt;/div>
+                    &lt;div className="activity-content">
+                      &lt;div className="activity-description">
+                        {activity.description}
+                      &lt;/div>
+                      &lt;div className="activity-meta">
+                        &lt;span className="activity-time">
+                          {formatDateTime(activity.timestamp)}
+                        &lt;/span>
+                        {activity.performed_by &amp;&amp; (
+                          &lt;span className="activity-performer">
+                            por {activity.performed_by}
+                          &lt;/span>
+                        )}
+                      &lt;/div>
+                      {activity.reason &amp;&amp; (
+                        &lt;div className="activity-reason">
+                          Motivo: {activity.reason}
+                        &lt;/div>
+                      )}
+                    &lt;/div>
+                  &lt;/div>
+                ))}
+              &lt;/div>
+            )}
+          &lt;/div>
+        )}
+      &lt;/div>
+
+      {/* Modal */}
+      {showModal &amp;&amp; (
+        &lt;div className="modal-overlay">
+          &lt;div className="modal-content">
+            &lt;div className="modal-header">
+              &lt;h3 className="modal-title">
+                {modalType === 'promote' &amp;&amp; (
+                  &lt;>
+                    &lt;UserPlus size={20} />
+                    Promover a Administrador
+                  &lt;/>
+                )}
+                {modalType === 'suspend' &amp;&amp; (
+                  &lt;>
+                    &lt;EyeOff size={20} />
+                    Suspender Administrador
+                  &lt;/>
+                )}
+                {modalType === 'reactivate' &amp;&amp; (
+                  &lt;>
+                    &lt;Eye size={20} />
+                    Reativar Administrador
+                  &lt;/>
+                )}
+                {modalType === 'remove' &amp;&amp; (
+                  &lt;>
+                    &lt;Trash2 size={20} />
+                    Remover Privilégios de Admin
+                  &lt;/>
+                )}
+              &lt;/h3>
+              &lt;button 
+                onClick={closeModal}
+                className="modal-close"
+                disabled={processingAction}
+              >
+                ×
+              &lt;/button>
+            &lt;/div>
+            
+            &lt;div className="modal-body">
+              {selectedUser &amp;&amp; (
+                &lt;div className="selected-user-info">
+                  &lt;h4>{selectedUser.name}&lt;/h4>
+                  &lt;p>{selectedUser.email}&lt;/p>
+                &lt;/div>
+              )}
+
+              &lt;div className="modal-description">
+                {modalType === 'promote' &amp;&amp; (
+                  &lt;p>Você está prestes a promover este usuário a administrador. Ele terá acesso total ao sistema.&lt;/p>
+                )}
+                {modalType === 'suspend' &amp;&amp; (
+                  &lt;p>Você está prestes a suspender este administrador. Ele manterá os privilégios mas ficará temporariamente inativo.&lt;/p>
+                )}
+                {modalType === 'reactivate' &amp;&amp; (
+                  &lt;p>Você está prestes a reativar este administrador suspenso.&lt;/p>
+                )}
+                {modalType === 'remove' &amp;&amp; (
+                  &lt;p>Você está prestes a remover os privilégios de administrador deste usuário. Esta ação é irreversível.&lt;/p>
+                )}
+              &lt;/div>
+
+              {(modalType === 'promote' || modalType === 'suspend' || modalType === 'remove') &amp;&amp; (
+                &lt;div className="form-group">
+                  &lt;label className="form-label">
+                    Justificativa {modalType === 'promote' ? '*' : '*'}
+                  &lt;/label>
+                  &lt;textarea
+                    value={actionReason}
+                    onChange={(e) => setActionReason(e.target.value)}
+                    className="form-textarea"
+                    rows="3"
+                    placeholder={`Descreva o motivo para ${
+                      modalType === 'promote' ? 'promover este usuário' :
+                      modalType === 'suspend' ? 'suspender este administrador' :
+                      'remover os privilégios deste administrador'
+                    }...`}
+                    disabled={processingAction}
+                  />
+                  &lt;div className="char-counter">
+                    {actionReason.length}/500 caracteres
+                  &lt;/div>
+                &lt;/div>
+              )}
+            &lt;/div>
+            
+            &lt;div className="modal-footer">
+              &lt;button 
+                onClick={closeModal}
+                className="cancel-button"
+                disabled={processingAction}
+              >
+                Cancelar
+              &lt;/button>
+              &lt;button 
+                onClick={() => {
+                  if (modalType === 'promote') {
+                    promoteUser();
+                  } else {
+                    manageAdmin(modalType);
+                  }
+                }}
+                className={`confirm-button ${modalType}`}
+                disabled={processingAction || (modalType !== 'reactivate' &amp;&amp; !actionReason.trim())}
+              >
+                {processingAction ? (
+                  &lt;>
+                    &lt;div className="spinner">&lt;/div>
+                    Processando...
+                  &lt;/>
+                ) : (
+                  &lt;>
+                    {modalType === 'promote' &amp;&amp; (
+                      &lt;>
+                        &lt;UserCheck size={16} />
+                        Promover
+                      &lt;/>
+                    )}
+                    {modalType === 'suspend' &amp;&amp; (
+                      &lt;>
+                        &lt;EyeOff size={16} />
+                        Suspender
+                      &lt;/>
+                    )}
+                    {modalType === 'reactivate' &amp;&amp; (
+                      &lt;>
+                        &lt;Eye size={16} />
+                        Reativar
+                      &lt;/>
+                    )}
+                    {modalType === 'remove' &amp;&amp; (
+                      &lt;>
+                        &lt;Trash2 size={16} />
+                        Remover
+                      &lt;/>
+                    )}
+                  &lt;/>
+                )}
+              &lt;/button>
+            &lt;/div>
+          &lt;/div>
+        &lt;/div>
+      )}
+    &lt;/div>
+  );
+};
+
+export default AdminManagementPanel;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AdminManagementPanel">AdminManagementPanel</a></li><li><a href="global.html#AdminRequestButton">AdminRequestButton</a></li><li><a href="global.html#AdminRequestsPanel">AdminRequestsPanel</a></li><li><a href="global.html#AdminView">AdminView</a></li><li><a href="global.html#ChatView">ChatView</a></li><li><a href="global.html#DocumentSelector">DocumentSelector</a></li><li><a href="global.html#GoogleLoginButton">GoogleLoginButton</a></li><li><a href="global.html#HistoryView">HistoryView</a></li><li><a href="global.html#LoginView">LoginView</a></li><li><a href="global.html#checkGoogleLoaded">checkGoogleLoaded</a></li><li><a href="global.html#checkUserRequest">checkUserRequest</a></li><li><a href="global.html#closeModal">closeModal</a></li><li><a href="global.html#fetchDocuments">fetchDocuments</a></li><li><a href="global.html#fetchRequests">fetchRequests</a></li><li><a href="global.html#formatDate">formatDate</a></li><li><a href="global.html#formatDateTime">formatDateTime</a></li><li><a href="global.html#formatFileName">formatFileName</a></li><li><a href="global.html#getActivityIcon">getActivityIcon</a></li><li><a href="global.html#getStatusIcon">getStatusIcon</a></li><li><a href="global.html#getStatusText">getStatusText</a></li><li><a href="global.html#handleAddDocument">handleAddDocument</a></li><li><a href="global.html#handleCancelEdit">handleCancelEdit</a></li><li><a href="global.html#handleChangeDocument">handleChangeDocument</a></li><li><a href="global.html#handleCredentialResponse">handleCredentialResponse</a></li><li><a href="global.html#handleDocumentSelect">handleDocumentSelect</a></li><li><a href="global.html#handleDocumentToggle">handleDocumentToggle</a></li><li><a href="global.html#handleDownloadDocument">handleDownloadDocument</a></li><li><a href="global.html#handleEditDocument">handleEditDocument</a></li><li><a href="global.html#handleFeedbackWithState">handleFeedbackWithState</a></li><li><a href="global.html#handleFileSelect">handleFileSelect</a></li><li><a href="global.html#handleGoogleError">handleGoogleError</a></li><li><a href="global.html#handleGoogleSuccess">handleGoogleSuccess</a></li><li><a href="global.html#handleKeyDown">handleKeyDown</a></li><li><a href="global.html#handleKeyDownWithDocument">handleKeyDownWithDocument</a></li><li><a href="global.html#handleLogin">handleLogin</a></li><li><a href="global.html#handleQuickLogin">handleQuickLogin</a></li><li><a href="global.html#handleRealUpload">handleRealUpload</a></li><li><a href="global.html#handleRegister">handleRegister</a></li><li><a href="global.html#handleRemoveDocument">handleRemoveDocument</a></li><li><a href="global.html#handleReviewRequest">handleReviewRequest</a></li><li><a href="global.html#handleSaveEdit">handleSaveEdit</a></li><li><a href="global.html#handleSendMessageWithDocument">handleSendMessageWithDocument</a></li><li><a href="global.html#handleSubmitRequest">handleSubmitRequest</a></li><li><a href="global.html#handleTabSwitch">handleTabSwitch</a></li><li><a href="global.html#loadActivityLog">loadActivityLog</a></li><li><a href="global.html#loadAdmins">loadAdmins</a></li><li><a href="global.html#loadAllData">loadAllData</a></li><li><a href="global.html#loadNonAdminUsers">loadNonAdminUsers</a></li><li><a href="global.html#manageAdmin">manageAdmin</a></li><li><a href="global.html#multiplica">multiplica</a></li><li><a href="global.html#openModal">openModal</a></li><li><a href="global.html#promoteUser">promoteUser</a></li><li><a href="global.html#renderGoogleButton">renderGoogleButton</a></li><li><a href="global.html#renderSectionContent">renderSectionContent</a></li><li><a href="global.html#toggleDocumentSelector">toggleDocumentSelector</a></li><li><a href="global.html#toggleDocumentStatus">toggleDocumentStatus</a></li><li><a href="global.html#toggleExpanded">toggleExpanded</a></li><li><a href="global.html#validateEmail">validateEmail</a></li><li><a href="global.html#validateLoginForm">validateLoginForm</a></li><li><a href="global.html#validateRegisterForm">validateRegisterForm</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Jul 09 2025 16:46:52 GMT-0300 (Horário Padrão de Brasília)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
